@@ -1,3 +1,4 @@
+#backend/faq_api/models.py
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
