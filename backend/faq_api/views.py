@@ -35,9 +35,19 @@ def cluster_results(request):
         matched_faq = matched.get("matched_faq", "N/A")
         similarity = matched.get("similarity", 0.0)
         gpt_eval = gpt.evaluate_coverage(top_message, matched_faq)
+        if "fully covered" in gpt_eval.lower():
+            coverage_label = "Fully"
+            resolution_score = 5
+        elif "partially covered" in gpt_eval_raw.lower():
+            coverage_label = "Partially"
+            resolution_score = 3
+        else:
+            coverage_label = "Not"
+            resolution_score = 1
         sentiment = sentiment_analyzer.analyze(top_message)
         summary = gpt.summarize_cluster(items)
         keywords = extract_keywords([msg["text"] for msg in items])
+        created_at = items[0].get("created_at", "2025-06-01")  # fallback for now: change it later!
         
         result_data.append({
             "cluster_id": cluster_id,
@@ -49,7 +59,10 @@ def cluster_results(request):
             "sentiment": sentiment,
             "keywords": keywords,
             "summary": summary,
-            "messages": [msg["text"] for msg in items]
+            "messages": [msg["text"] for msg in items],
+            "coverage": coverage_label,
+            "resolution_score": resolution_score,
+            "created_at": created_at,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
