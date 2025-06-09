@@ -16,4 +16,5 @@ class ClusterResultSerializer(serializers.Serializer):
     resolution_score = serializers.IntegerField()
     resolution_reason = serializers.CharField()
     faq_suggestion = serializers.DictField(child=serializers.CharField())
+    topic_label = serializers.CharField()
 
