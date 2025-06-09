@@ -1,6 +1,6 @@
 //frontend/src/components/ClusterTable.jsx
 import React from "react";
-import { Table, Button } from "flowbite-react";
+import { Table, Button, Tooltip } from "flowbite-react";
 
 export default function ClusterTable({ clusters, onReview }) {
   return (
@@ -11,6 +11,9 @@ export default function ClusterTable({ clusters, onReview }) {
         <Table.HeadCell>Top Message</Table.HeadCell>
         <Table.HeadCell>Matched FAQ</Table.HeadCell>
         <Table.HeadCell>Similarity</Table.HeadCell>
+        <Table.HeadCell>Sentiment</Table.HeadCell>
+        <Table.HeadCell>Summary</Table.HeadCell>
+        <Table.HeadCell>Keywords</Table.HeadCell>
         <Table.HeadCell>Review</Table.HeadCell>
       </Table.Head>
       <Table.Body className="divide-y">
@@ -18,9 +21,19 @@ export default function ClusterTable({ clusters, onReview }) {
           <Table.Row key={cluster.clusterId}>
             <Table.Cell>{cluster.clusterId}</Table.Cell>
             <Table.Cell>{cluster.messageCount}</Table.Cell>
-            <Table.Cell>{cluster.topMessage}</Table.Cell>
-            <Table.Cell>{cluster.matchedFaq}</Table.Cell>
+            <Table.Cell className="max-w-xs truncate">{cluster.topMessage}</Table.Cell>
+            <Table.Cell className="max-w-xs truncate">{cluster.matchedFaq}</Table.Cell>
             <Table.Cell>{(cluster.similarity * 100).toFixed(1)}%</Table.Cell>
+            <Table.Cell>{cluster.sentiment}</Table.Cell>
+            <Table.Cell className="max-w-xs truncate">{cluster.summary}</Table.Cell>
+            <Table.Cell>
+              <Tooltip content={cluster.keywords.join(", ")}>
+                <span>
+                  {cluster.keywords.slice(0, 3).join(", ")}
+                  {cluster.keywords.length > 3 ? "..." : ""}
+                </span>
+              </Tooltip>
+            </Table.Cell>
             <Table.Cell>
               <Button onClick={() => onReview(cluster)}>Review</Button>
             </Table.Cell>
