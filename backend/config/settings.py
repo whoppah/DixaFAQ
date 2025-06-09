@@ -33,6 +33,7 @@ CELERY_RESULT_BACKEND = None
 CELERY_TIMEZONE = "Europe/Amsterdam" 
 USE_TZ = True
 TIME_ZONE = "Europe/Amsterdam"
+CELERY_ENABLE_UTC = False 
 
 # === APPLICATIONS ===
 INSTALLED_APPS = [
