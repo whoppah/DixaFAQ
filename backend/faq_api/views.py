@@ -54,6 +54,11 @@ def cluster_results(request):
         created_at = items[0].get("created_at") 
         if not created_at:
             print(f"⚠️ Missing created_at for cluster {cluster_id}")
+        #score
+        score_data = gpt.score_resolution(top_message, matched_faq)
+        coverage_label = score_data.get("label", "Unknown")
+        resolution_score = score_data.get("score", 0)
+        resolution_reason = score_data.get("reason", "")
         
         result_data.append({
             "cluster_id": cluster_id,
@@ -69,6 +74,9 @@ def cluster_results(request):
             "coverage": coverage_label,
             "resolution_score": resolution_score,
             "created_at": created_at.isoformat() if created_at else None,
+            "coverage": coverage_label,
+            "resolution_score": resolution_score,
+            "resolution_reason": resolution_reason,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
