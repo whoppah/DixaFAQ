@@ -5,6 +5,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from collections import Counter
 import re
 import string
+import umap
+import numpy as np
 
 class MessageClusterer:
     def __init__(self, min_cluster_size=10):
@@ -70,3 +72,18 @@ class MessageClusterer:
         stopwords = set(["the", "a", "an", "and", "or", "in", "on", "is", "to", "of", "for", "with", "i", "we", "you", "it"])
         filtered = [w for w in words if w not in stopwords and len(w) > 2]
         return [word for word, _ in Counter(filtered).most_common(top_n)]
+
+    def get_cluster_map_coords(embeddings, labels):
+    vecs = np.array([e['embedding'] for e in embeddings])
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1)
+    reduced = reducer.fit_transform(vecs)
+
+    return [
+        {
+            "id": e["id"],
+            "x": float(pos[0]),
+            "y": float(pos[1]),
+            "label": label
+        }
+        for e, pos, label in zip(embeddings, reduced, labels)
+    ]
