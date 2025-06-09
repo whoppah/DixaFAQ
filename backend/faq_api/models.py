@@ -8,6 +8,7 @@ class Message(models.Model):
     author_name = models.CharField(max_length=100, null=True, blank=True)
     channel = models.CharField(max_length=50, null=True, blank=True)
     embedding = ArrayField(models.FloatField(), null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
 
 class FAQ(models.Model):
     question = models.TextField()
