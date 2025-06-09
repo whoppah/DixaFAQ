@@ -32,3 +32,11 @@ Then explain why.
         )
         result = response['choices'][0]['message']['content']
         return result
+        
+    def get_sentiment(self, text):
+        prompt = f"What is the sentiment of this message? Respond with: Positive, Neutral, or Negative.\n\nMessage: {text}"
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response['choices'][0]['message']['content'].strip()
