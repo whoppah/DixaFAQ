@@ -15,3 +15,4 @@ class ClusterResultSerializer(serializers.Serializer):
     coverage = serializers.CharField()
     resolution_score = serializers.IntegerField()
     resolution_reason = serializers.CharField()
+    faq_suggestion = serializers.CharField()
