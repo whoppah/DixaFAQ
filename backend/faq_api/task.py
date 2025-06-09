@@ -10,7 +10,7 @@ from faq_api.utils.preprocess import MessagePreprocessor
 from faq_api.utils.embedding import Tokenizer
 from faq_api.models import Message
 
-@shared_task
+@shared_task(name="log")
 def log_timezone_debug():
     now_utc = datetime.utcnow()
     now_local = datetime.now()
@@ -19,7 +19,7 @@ def log_timezone_debug():
     print(f"[Local naive]    {now_local}")
     print(f"[Europe/Amsterdam] {now_amsterdam}")
 
-@shared_task
+@shared_task(name="download_and_process")
 def async_download_and_process():
     print("🚀 Starting async Dixa + Elevio + Embedding pipeline")
 
