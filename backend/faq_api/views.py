@@ -9,6 +9,7 @@ from django.conf import settings
 from faq_api.utils.sentiment import SentimentAnalyzer
 from faq_api.utils.clustering import extract_keywords, get_cluster_map_coords
 
+
 @api_view(['GET'])
 def cluster_results(request):
     # Load embeddings from DB
@@ -25,42 +26,38 @@ def cluster_results(request):
     centroids = clusterer.compute_centroids(clustered)
     matches = clusterer.match_faqs(centroids, faqs)
 
-    # GPT evaluation and sentiment analysis
+    # GPT and sentiment analysis
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
     sentiment_analyzer = SentimentAnalyzer()
 
-    #cluster map
+    # Cluster map
     cluster_map = get_cluster_map_coords(messages, labels, vecs)
-    
+
     result_data = []
     for cluster_id, items in clustered.items():
         top_message = items[0]["text"]
+        created_at = items[0].get("created_at")
+
         matched = matches.get(cluster_id, {})
         matched_faq = matched.get("matched_faq", "N/A")
         similarity = matched.get("similarity", 0.0)
-        gpt_eval = gpt.evaluate_coverage(top_message, matched_faq)
-        if "fully covered" in gpt_eval.lower():
-            coverage_label = "Fully"
-            resolution_score = 5
-        elif "partially covered" in gpt_eval.lower():
-            coverage_label = "Partially"
-            resolution_score = 3
-        else:
-            coverage_label = "Not"
-            resolution_score = 1
-        sentiment = sentiment_analyzer.analyze(top_message)
-        summary = gpt.summarize_cluster(items)
-        keywords = extract_keywords([msg["text"] for msg in items])
-        created_at = items[0].get("created_at") 
-        if not created_at:
-            print(f"⚠️ Missing created_at for cluster {cluster_id}")
-        #score
+
+        # GPT scoring
         score_data = gpt.score_resolution(top_message, matched_faq)
+        gpt_eval = f"{score_data.get('label')} — {score_data.get('reason')}"
+        coverage_label = score_data.get("label", "Unknown")
+        resolution_score = score_data.get("score", 0)
         resolution_reason = score_data.get("reason", "")
+
+        # Suggest new FAQ if needed
         faq_suggestion = None
         if coverage_label in ["Not", "Partially"]:
             faq_suggestion = gpt.suggest_faq(top_message)
-        
+
+        sentiment = sentiment_analyzer.analyze(top_message)
+        summary = gpt.summarize_cluster(items)
+        keywords = extract_keywords([msg["text"] for msg in items])
+
         result_data.append({
             "cluster_id": cluster_id,
             "message_count": len(items),
@@ -74,14 +71,13 @@ def cluster_results(request):
             "messages": [msg["text"] for msg in items],
             "coverage": coverage_label,
             "resolution_score": resolution_score,
-            "created_at": created_at.isoformat() if created_at else None,
-            "coverage": coverage_label,
             "resolution_reason": resolution_reason,
-            "suggested_faq": faq_suggestion,
+            "faq_suggestion": faq_suggestion,
+            "created_at": created_at.isoformat() if created_at else None,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
     return Response({
-        "clusters":serialized.data,
-        "clusters_map":cluster_map,
+        "clusters": serialized.data,
+        "clusters_map": cluster_map,
     })
