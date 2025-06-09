@@ -3,9 +3,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
+import ClusterMapChart from "../components/ClusterMapChart";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
+  const [clusterMap, setClusterMap] = useState([]);
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -14,7 +16,8 @@ export default function ClusterDashboard() {
     async function fetchData() {
       try {
         const res = await axios.get("/api/faq/clusters");
-        setClusters(res.data);
+        setClusters(res.data.clusters);
+        setClusterMap(res.data.cluster_map);
       } catch (err) {
         console.error("Failed to load clusters:", err);
       } finally {
@@ -30,12 +33,15 @@ export default function ClusterDashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 space-y-8">
       <h1 className="text-3xl font-bold mb-6">📊 Cluster Match Dashboard</h1>
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
-        <ClusterTable clusters={clusters} onReview={handleOpenModal} />
+        <>
+          <ClusterMapChart data={clusterMap} />
+          <ClusterTable clusters={clusters} onReview={handleOpenModal} />
+        </>
       )}
       {selectedCluster && (
         <FAQMatchModal
