@@ -40,3 +40,13 @@ Then explain why.
             messages=[{"role": "user", "content": prompt}]
         )
         return response['choices'][0]['message']['content'].strip()
+        
+    def summarize_cluster(self, messages):
+        full_text = "\n".join([m["text"] for m in messages])
+        prompt = f"Summarize the key topic or issue from the following user messages:\n\n{full_text}"
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response['choices'][0]['message']['content'].strip()
+
