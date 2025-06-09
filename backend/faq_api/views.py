@@ -7,6 +7,7 @@ from faq_api.utils.clustering import MessageClusterer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from django.conf import settings
 from faq_api.utils.sentiment import SentimentAnalyzer
+from faq_api.utils.clustering import extract_keywords
 
 @api_view(['GET'])
 def cluster_results(request):
@@ -24,6 +25,8 @@ def cluster_results(request):
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
     sentiment_analyzer = SentimentAnalyzer()
 
+    #Keywords
+    
     result_data = []
     for cluster_id, items in clustered.items():
         top_message = items[0]["text"]
@@ -33,6 +36,7 @@ def cluster_results(request):
         gpt_eval = gpt.evaluate_coverage(top_message, matched_faq)
         entiment = sentiment_analyzer.analyze(top_message)
         summary = gpt.summarize_cluster(items)
+        keywords = extract_keywords([msg["text"] for msg in items])
         
         result_data.append({
             "cluster_id": cluster_id,
@@ -42,6 +46,7 @@ def cluster_results(request):
             "similarity": round(similarity, 4),
             "gpt_evaluation": gpt_eval,
             "sentiment": sentiment,
+            "keywords": keywords,
             "summary": summary
         })
 
