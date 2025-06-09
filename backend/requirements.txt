@@ -4,16 +4,26 @@ dj-database-url
 python-dotenv
 djangorestframework
 django-cors-headers
+
+# AI & NLP
 openai>=1.0
-tiktoken
-spacy
-langdetect
-html2text
-psycopg2-binary
-scikit-learn
-numpy
-scipy
-celery
-redis
-reportlab
-ipython
+tiktoken>=0.5.1
+spacy>=3.7.2
+langdetect>=1.0.9
+html2text>=2020.1.16
+
+# Database
+psycopg2-binary>=2.9
+
+# ML / Vector math
+scikit-learn>=1.4.2
+numpy>=1.24
+scipy>=1.10
+
+# Async Task Queue
+celery>=5.3
+redis>=5.0
+
+# Reporting / Debug
+reportlab>=4.0
+ipython>=8.0
