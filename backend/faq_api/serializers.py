@@ -9,5 +9,6 @@ class ClusterResultSerializer(serializers.Serializer):
     similarity = serializers.FloatField()
     gpt_evaluation = serializers.CharField()
     sentiment = serializers.CharField()
+    keywords = serializers.ListField(child=serializers.CharField())
     summary = serializers.CharField()
 
