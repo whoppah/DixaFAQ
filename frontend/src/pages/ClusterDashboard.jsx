@@ -7,6 +7,9 @@ import ClusterMapChart from "../components/ClusterMapChart";
 import ClusterFrequencyChart from "../components/ClusterFrequencyChart";
 import SentimentBarChart from "../components/SentimentBarChart";
 import CoveragePieChart from "../components/CoveragePieChart";
+import ResolutionScoreBarChart from "../components/ResolutionScoreBarChart";
+import ResolutionTimelineChart from "../components/ResolutionTimelineChart";
+
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
@@ -157,7 +160,10 @@ export default function ClusterDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SentimentBarChart clusters={filteredClusters} />
             <CoveragePieChart clusters={filteredClusters} />
+            <ResolutionScoreBarChart clusters={filteredClusters} />
+            <ResolutionTimelineChart clusters={filteredClusters} />
           </div>
+
 
           <ClusterMapChart
             data={clusterMap}
