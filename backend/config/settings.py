@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 ]
-
+WSGI_APPLICATION = "config.wsgi.application"
 # === MIDDLEWARE ===
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  
