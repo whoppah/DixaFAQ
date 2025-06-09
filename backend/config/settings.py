@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-key")
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]  # For dev/testing; tighten in prod
-CSRF_TRUSTED_ORIGINS = ["*"] # For dev/testing; tighten in prod
+CSRF_TRUSTED_ORIGINS = ["*"]  # For dev/testing; tighten in prod
 
 # === API Keys ===
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -24,16 +24,19 @@ ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
 }
+
+# === CELERY CONFIGURATION ===
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
-
+CELERY_RESULT_BACKEND = None  
+CELERY_TIMEZONE = "UTC"
 
 # === APPLICATIONS ===
 INSTALLED_APPS = [
-    "faq_api",               
-    "rest_framework",        
-    "corsheaders",            
+    "faq_api",
+    "rest_framework",
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -41,10 +44,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 ]
+
+# === WSGI ===
 WSGI_APPLICATION = "config.wsgi.application"
+
 # === MIDDLEWARE ===
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -56,8 +62,8 @@ MIDDLEWARE = [
 
 # === CORS CONFIG ===
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",                  
-    "https://frontend-dixafaq-production.up.railway.app",       # Railway frontend
+    "http://localhost:5173",
+    "https://frontend-dixafaq-production.up.railway.app",
 ]
 
 # === STATIC FILES ===
