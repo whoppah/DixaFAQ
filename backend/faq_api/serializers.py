@@ -1,3 +1,4 @@
+#backend/faq_api/serializers.py
 from rest_framework import serializers
 
 class ClusterResultSerializer(serializers.Serializer):
