@@ -1,3 +1,4 @@
+//frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ClusterTable from "../components/ClusterTable";
