@@ -58,6 +58,8 @@ def cluster_results(request):
         summary = gpt.summarize_cluster(items)
         keywords = extract_keywords([msg["text"] for msg in items])
 
+        topic_label = gpt.label_topic(items)
+
         result_data.append({
             "cluster_id": cluster_id,
             "message_count": len(items),
@@ -74,6 +76,7 @@ def cluster_results(request):
             "resolution_reason": resolution_reason,
             "faq_suggestion": faq_suggestion,
             "created_at": created_at.isoformat() if created_at else None,
+            "topic_label": topic_label,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
