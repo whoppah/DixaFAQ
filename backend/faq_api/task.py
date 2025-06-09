@@ -25,7 +25,7 @@ def async_download_and_process():
 
     dixa = DixaDownloader(
         api_token=dixa_token,
-        start_date=datetime.datetime(2025, 1, 1),
+        start_date=datetime.datetime(2025, 5, 1),
         end_date=datetime.datetime.now()
     )
     dixa_output = "/tmp/dixa_messages.json"
