@@ -1,3 +1,4 @@
+//frontend/src/components/ClusterTable.jsx
 import React from "react";
 import { Table, Button } from "flowbite-react";
 
