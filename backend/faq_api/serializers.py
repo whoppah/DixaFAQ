@@ -14,3 +14,4 @@ class ClusterResultSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
     coverage = serializers.CharField()
     resolution_score = serializers.IntegerField()
+    resolution_reason = serializers.CharField()
