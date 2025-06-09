@@ -7,7 +7,7 @@ from faq_api.utils.clustering import MessageClusterer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from django.conf import settings
 from faq_api.utils.sentiment import SentimentAnalyzer
-from faq_api.utils.clustering import extract_keywords
+from faq_api.utils.clustering import extract_keywords, get_cluster_map_coords
 
 @api_view(['GET'])
 def cluster_results(request):
@@ -17,7 +17,7 @@ def cluster_results(request):
 
     # Cluster messages
     clusterer = MessageClusterer(min_cluster_size=5)
-    clustered = clusterer.cluster_embeddings(messages)
+    clustered, labels, vecs = clusterer.cluster_embeddings(messages)
     centroids = clusterer.compute_centroids(clustered)
     matches = clusterer.match_faqs(centroids, faqs)
 
@@ -25,7 +25,8 @@ def cluster_results(request):
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
     sentiment_analyzer = SentimentAnalyzer()
 
-    #Keywords
+    #cluster map
+    cluster_map = get_cluster_map_coords(messages, labels, vecs)
     
     result_data = []
     for cluster_id, items in clustered.items():
@@ -34,7 +35,7 @@ def cluster_results(request):
         matched_faq = matched.get("matched_faq", "N/A")
         similarity = matched.get("similarity", 0.0)
         gpt_eval = gpt.evaluate_coverage(top_message, matched_faq)
-        entiment = sentiment_analyzer.analyze(top_message)
+        sentiment = sentiment_analyzer.analyze(top_message)
         summary = gpt.summarize_cluster(items)
         keywords = extract_keywords([msg["text"] for msg in items])
         
@@ -52,4 +53,7 @@ def cluster_results(request):
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
-    return Response(serialized.data)
+    return Response({
+        "clusters":serialized.data,
+        "clusters_map":cluster_map,
+    })
