@@ -24,6 +24,10 @@ ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
 }
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+
 
 # === APPLICATIONS ===
 INSTALLED_APPS = [
