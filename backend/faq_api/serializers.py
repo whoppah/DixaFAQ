@@ -8,3 +8,6 @@ class ClusterResultSerializer(serializers.Serializer):
     matched_faq = serializers.CharField()
     similarity = serializers.FloatField()
     gpt_evaluation = serializers.CharField()
+    sentiment = serializers.CharField()
+    summary = serializers.CharField()
+
