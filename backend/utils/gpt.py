@@ -77,5 +77,28 @@ Then explain why.
             return parsed
         except Exception:
             return {"label": "Unknown", "score": 0, "reason": content}
+    def suggest_faq(self, question):
+        prompt = f"""
+    Suggest a better FAQ (Q&A) to address the following user message if the current FAQ is insufficient:
+    
+    User message:
+    {question}
+    
+    Respond in JSON:
+    {{
+      "question": "...",
+      "answer": "..."
+    }}
+    """
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        import json
+        try:
+            return json.loads(response['choices'][0]['message']['content'])
+        except Exception:
+            return {"question": "", "answer": ""}
+
 
 
