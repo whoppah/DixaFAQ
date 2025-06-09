@@ -53,7 +53,7 @@ MIDDLEWARE = [
 # === CORS CONFIG ===
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",                  
-    "https://<your-app>.up.railway.app",       # Railway frontend
+    "https://frontend-dixafaq-production.up.railway.app",       # Railway frontend
 ]
 
 # === STATIC FILES ===
