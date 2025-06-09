@@ -1,3 +1,4 @@
+#backend/utils/gpt.py
 import openai
 
 class GPTFAQAnalyzer:
