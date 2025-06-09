@@ -12,7 +12,11 @@ from faq_api.utils.clustering import extract_keywords, get_cluster_map_coords
 @api_view(['GET'])
 def cluster_results(request):
     # Load embeddings from DB
-    messages = list(Message.objects.exclude(embedding=None).values("message_id", "text", "embedding"))
+    messages = list(
+        Message.objects.exclude(embedding=None).values(
+            "message_id", "text", "embedding", "created_at"
+        )
+    )
     faqs = list(FAQ.objects.exclude(embedding=None).values("question", "embedding"))
 
     # Cluster messages
@@ -47,7 +51,9 @@ def cluster_results(request):
         sentiment = sentiment_analyzer.analyze(top_message)
         summary = gpt.summarize_cluster(items)
         keywords = extract_keywords([msg["text"] for msg in items])
-        created_at = items[0].get("created_at", "2025-06-01")  # fallback for now: change it later!
+        created_at = items[0].get("created_at") 
+        if not created_at:
+            print(f"⚠️ Missing created_at for cluster {cluster_id}")
         
         result_data.append({
             "cluster_id": cluster_id,
@@ -62,7 +68,7 @@ def cluster_results(request):
             "messages": [msg["text"] for msg in items],
             "coverage": coverage_label,
             "resolution_score": resolution_score,
-            "created_at": created_at,
+            "created_at": created_at.isoformat() if created_at else None,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
