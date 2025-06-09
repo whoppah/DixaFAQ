@@ -23,7 +23,10 @@ class MessageClusterer:
         labels = clusterer.fit_predict(vecs)
 
         clustered = {}
+        id_to_label = {}
+        
         for i, label in enumerate(labels):
+            id_to_label[ids[i]] = label
             if label == -1:
                 continue  # noise
             clustered.setdefault(label, []).append({
@@ -32,7 +35,7 @@ class MessageClusterer:
                 "text": embeddings[i].get('text', '')
             })
 
-        return clustered
+        return clustered, labels, vecs 
 
     def compute_centroids(self, clusters):
         centroids = {}
@@ -73,17 +76,21 @@ class MessageClusterer:
         filtered = [w for w in words if w not in stopwords and len(w) > 2]
         return [word for word, _ in Counter(filtered).most_common(top_n)]
 
-    def get_cluster_map_coords(embeddings, labels):
-    vecs = np.array([e['embedding'] for e in embeddings])
-    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1)
-    reduced = reducer.fit_transform(vecs)
-
-    return [
-        {
-            "id": e["id"],
-            "x": float(pos[0]),
-            "y": float(pos[1]),
-            "label": label
-        }
-        for e, pos, label in zip(embeddings, reduced, labels)
-    ]
+    def get_cluster_map_coords(embeddings, labels, vecs=None):
+        if vecs is None:
+            vecs = np.array([e['embedding'] for e in embeddings])
+        
+        reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='cosine')
+        reduced = reducer.fit_transform(vecs)
+    
+        return [
+            {
+                "id": e["message_id"],
+                "x": float(pos[0]),
+                "y": float(pos[1]),
+                "label": int(label)
+            }
+            for e, pos, label in zip(embeddings, reduced, labels)
+            if label != -1
+        ]
+    
