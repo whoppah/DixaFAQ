@@ -11,4 +11,6 @@ class ClusterResultSerializer(serializers.Serializer):
     sentiment = serializers.CharField()
     keywords = serializers.ListField(child=serializers.CharField())
     summary = serializers.CharField()
-
+    created_at = serializers.CharField()
+    coverage = serializers.CharField()
+    resolution_score = serializers.IntegerField()
