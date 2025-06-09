@@ -8,11 +8,10 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
 
 export default function ClusterMapChart({ data }) {
-  // Group points by cluster label
   const grouped = data.reduce((acc, point) => {
     const label = point.label;
     if (!acc[label]) acc[label] = [];
@@ -22,7 +21,7 @@ export default function ClusterMapChart({ data }) {
 
   return (
     <div className="w-full h-[500px] bg-white shadow p-4 rounded">
-      <h2 className="text-lg font-semibold mb-4">🗺️ UMAP Cluster Map</h2>
+      <h2 className="text-lg font-semibold mb-4">Cluster Map</h2>
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart>
           <CartesianGrid />
@@ -35,7 +34,7 @@ export default function ClusterMapChart({ data }) {
               key={label}
               name={`Cluster ${label}`}
               data={points}
-              fill={`hsl(${(index * 60) % 360}, 70%, 50%)`}
+              fill={`hsl(${(index * 67) % 360}, 70%, 50%)`}
             />
           ))}
         </ScatterChart>
