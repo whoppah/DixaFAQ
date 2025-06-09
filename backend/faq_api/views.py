@@ -42,7 +42,7 @@ def cluster_results(request):
         if "fully covered" in gpt_eval.lower():
             coverage_label = "Fully"
             resolution_score = 5
-        elif "partially covered" in gpt_eval_raw.lower():
+        elif "partially covered" in gpt_eval.lower():
             coverage_label = "Partially"
             resolution_score = 3
         else:
@@ -56,8 +56,6 @@ def cluster_results(request):
             print(f"⚠️ Missing created_at for cluster {cluster_id}")
         #score
         score_data = gpt.score_resolution(top_message, matched_faq)
-        coverage_label = score_data.get("label", "Unknown")
-        resolution_score = score_data.get("score", 0)
         resolution_reason = score_data.get("reason", "")
         
         result_data.append({
@@ -75,7 +73,6 @@ def cluster_results(request):
             "resolution_score": resolution_score,
             "created_at": created_at.isoformat() if created_at else None,
             "coverage": coverage_label,
-            "resolution_score": resolution_score,
             "resolution_reason": resolution_reason,
         })
 
