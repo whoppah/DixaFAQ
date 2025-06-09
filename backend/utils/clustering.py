@@ -2,6 +2,9 @@
 import numpy as np
 import hdbscan
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import Counter
+import re
+import string
 
 class MessageClusterer:
     def __init__(self, min_cluster_size=10):
@@ -56,3 +59,14 @@ class MessageClusterer:
             }
 
         return results
+
+    def extract_keywords(texts, top_n=10):
+        words = []
+        for text in texts:
+            text = text.lower()
+            text = re.sub(rf"[{string.punctuation}]", "", text)
+            words.extend(text.split())
+    
+        stopwords = set(["the", "a", "an", "and", "or", "in", "on", "is", "to", "of", "for", "with", "i", "we", "you", "it"])
+        filtered = [w for w in words if w not in stopwords and len(w) > 2]
+        return [word for word, _ in Counter(filtered).most_common(top_n)]
