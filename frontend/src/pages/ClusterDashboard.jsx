@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ClusterTable from "../components/ClusterTable";
-import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
+import FAQMatchModal from "../components/FAQMatchModal";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
@@ -33,8 +33,9 @@ export default function ClusterDashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8">
-      <h1 className="text-3xl font-bold mb-6">📊 Cluster Match Dashboard</h1>
+    <div className="container mx-auto px-4 py-6 space-y-10">
+      <h1 className="text-3xl font-bold text-blue-700">📊 Cluster Insight Dashboard</h1>
+      
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
@@ -43,6 +44,7 @@ export default function ClusterDashboard() {
           <ClusterTable clusters={clusters} onReview={handleOpenModal} />
         </>
       )}
+
       {selectedCluster && (
         <FAQMatchModal
           open={isOpen}
