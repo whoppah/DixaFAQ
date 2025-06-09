@@ -8,6 +8,9 @@ from faq_api.utils.gpt import GPTFAQAnalyzer
 from django.conf import settings
 from faq_api.utils.sentiment import SentimentAnalyzer
 from faq_api.utils.clustering import extract_keywords, get_cluster_map_coords
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from faq_api.tasks import async_download_and_process
 
 
 @api_view(['GET'])
@@ -84,3 +87,9 @@ def cluster_results(request):
         "clusters": serialized.data,
         "clusters_map": cluster_map,
     })
+
+@api_view(["POST"])
+def trigger_pipeline(request):
+    async_download_and_process.delay()
+    return Response({"status": "Pipeline started"})
+
