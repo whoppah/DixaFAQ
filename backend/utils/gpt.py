@@ -79,3 +79,21 @@ Respond in JSON:
             return json.loads(response['choices'][0]['message']['content'])
         except Exception:
             return {"question": "", "answer": ""}
+    def label_topic(self, messages):
+        text = "\n".join([msg["text"] for msg in messages[:5]])
+        prompt = f"""
+    You are a clustering assistant.
+    
+    Given the following messages, label the topic in 2–4 descriptive words (e.g., "Shipping Delay", "Login Issue", "Refund Request").
+    
+    Messages:
+    {text}
+    
+    Respond with just the label.
+    """
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response['choices'][0]['message']['content'].strip()
+
