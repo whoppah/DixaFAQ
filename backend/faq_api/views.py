@@ -47,7 +47,8 @@ def cluster_results(request):
             "gpt_evaluation": gpt_eval,
             "sentiment": sentiment,
             "keywords": keywords,
-            "summary": summary
+            "summary": summary,
+            "messages": [msg["text"] for msg in items]
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
