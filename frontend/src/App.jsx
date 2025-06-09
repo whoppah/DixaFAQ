@@ -1,6 +1,6 @@
 //frontend/src/App.jsx
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ClusterDashboard from "./pages/ClusterDashboard";
 
 function App() {
