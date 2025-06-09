@@ -49,4 +49,33 @@ Then explain why.
             messages=[{"role": "user", "content": prompt}]
         )
         return response['choices'][0]['message']['content'].strip()
+    def score_resolution(self, question, faq_answer):
+        prompt = f"""
+    Evaluate the resolution quality of this FAQ in response to the user's message.
+    
+    User message:
+    {question}
+    
+    FAQ answer:
+    {faq_answer}
+    
+    Provide:
+    - A label: Fully / Partially / Not covered
+    - A numeric score: 5 (excellent) to 1 (poor)
+    - A short explanation
+    Respond in JSON format like:
+    {{"label": "...", "score": ..., "reason": "..."}}
+    """
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        content = response['choices'][0]['message']['content']
+        import json
+        try:
+            parsed = json.loads(content)
+            return parsed
+        except Exception:
+            return {"label": "Unknown", "score": 0, "reason": content}
+
 
