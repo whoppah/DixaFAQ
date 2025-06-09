@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-key")
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]  # For dev/testing; tighten in prod
-CSRF_TRUSTED_ORIGINS = ["https://<your-app>.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = ["*"] # For dev/testing; tighten in prod
 
 # === API Keys ===
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
