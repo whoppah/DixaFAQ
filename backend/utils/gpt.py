@@ -1,38 +1,46 @@
-#backend/utils/gpt.py
+# backend/faq_api/utils/gpt.py
 import openai
+import json
 
 class GPTFAQAnalyzer:
     def __init__(self, openai_api_key, model="gpt-4o"):
         openai.api_key = openai_api_key
         self.model = model
 
-    def evaluate_coverage(self, question, faq_answer):
+    def score_resolution(self, question, faq_answer):
         prompt = f"""
-You are an FAQ evaluator.
+Evaluate the resolution quality of this FAQ in response to the user's message.
 
-User question:
+User message:
 {question}
 
-FAQ Answer:
+FAQ answer:
 {faq_answer}
 
-Does the FAQ fully and clearly answer the user's question? Answer with one of the following:
-- Fully covered
-- Partially covered
-- Not covered
-
-Then explain why.
+Provide:
+- A label: Fully / Partially / Not covered
+- A numeric score: 5 (excellent) to 1 (poor)
+- A short explanation
+Respond in JSON format like:
+{{"label": "...", "score": ..., "reason": "..."}}
 """
         response = openai.ChatCompletion.create(
             model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that evaluates FAQ coverage."},
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
-        result = response['choices'][0]['message']['content']
-        return result
-        
+        content = response['choices'][0]['message']['content']
+
+        try:
+            parsed = json.loads(content)
+            # Minimal schema validation
+            if isinstance(parsed, dict) and "label" in parsed and "score" in parsed:
+                return parsed
+        except Exception:
+            pass
+
+        # Fallback if JSON fails
+        return {"label": "Unknown", "score": 0, "reason": content}
+
     def get_sentiment(self, text):
         prompt = f"What is the sentiment of this message? Respond with: Positive, Neutral, or Negative.\n\nMessage: {text}"
         response = openai.ChatCompletion.create(
@@ -40,7 +48,7 @@ Then explain why.
             messages=[{"role": "user", "content": prompt}]
         )
         return response['choices'][0]['message']['content'].strip()
-        
+
     def summarize_cluster(self, messages):
         full_text = "\n".join([m["text"] for m in messages])
         prompt = f"Summarize the key topic or issue from the following user messages:\n\n{full_text}"
@@ -49,56 +57,25 @@ Then explain why.
             messages=[{"role": "user", "content": prompt}]
         )
         return response['choices'][0]['message']['content'].strip()
-    def score_resolution(self, question, faq_answer):
-        prompt = f"""
-    Evaluate the resolution quality of this FAQ in response to the user's message.
-    
-    User message:
-    {question}
-    
-    FAQ answer:
-    {faq_answer}
-    
-    Provide:
-    - A label: Fully / Partially / Not covered
-    - A numeric score: 5 (excellent) to 1 (poor)
-    - A short explanation
-    Respond in JSON format like:
-    {{"label": "...", "score": ..., "reason": "..."}}
-    """
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        content = response['choices'][0]['message']['content']
-        import json
-        try:
-            parsed = json.loads(content)
-            return parsed
-        except Exception:
-            return {"label": "Unknown", "score": 0, "reason": content}
+
     def suggest_faq(self, question):
         prompt = f"""
-    Suggest a better FAQ (Q&A) to address the following user message if the current FAQ is insufficient:
-    
-    User message:
-    {question}
-    
-    Respond in JSON:
-    {{
-      "question": "...",
-      "answer": "..."
-    }}
-    """
+Suggest a better FAQ (Q&A) to address the following user message if the current FAQ is insufficient.
+
+User message:
+{question}
+
+Respond in JSON:
+{{
+  "question": "...",
+  "answer": "..."
+}}
+"""
         response = openai.ChatCompletion.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}]
         )
-        import json
         try:
             return json.loads(response['choices'][0]['message']['content'])
         except Exception:
             return {"question": "", "answer": ""}
-
-
-
