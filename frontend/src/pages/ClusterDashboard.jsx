@@ -9,7 +9,8 @@ import SentimentBarChart from "../components/SentimentBarChart";
 import CoveragePieChart from "../components/CoveragePieChart";
 import ResolutionScoreBarChart from "../components/ResolutionScoreBarChart";
 import ResolutionTimelineChart from "../components/ResolutionTimelineChart";
-
+import FAQImprovementPanel from "../components/FAQImprovementPanel";
+import TopGapsByTopicChart from "../components/TopGapsByTopicChart";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
@@ -83,6 +84,17 @@ export default function ClusterDashboard() {
       dateMatch
     );
   });
+
+  const faqSuggestions = filteredClusters
+    .filter(c => c.faq_suggestion && c.faq_suggestion.question)
+    .map(c => ({
+      clusterId: c.cluster_id,
+      question: c.faq_suggestion.question,
+      answer: c.faq_suggestion.answer,
+      reason: c.resolution_reason,
+      coverage: c.coverage,
+      matchedFaq: c.matched_faq
+    }));
 
   const getSimulatedTimeline = (clusters) =>
     clusters.map((c, i) => ({
@@ -164,6 +176,8 @@ export default function ClusterDashboard() {
             <ResolutionTimelineChart clusters={filteredClusters} />
           </div>
 
+          <TopGapsByTopicChart clusters={filteredClusters} />
+          <FAQImprovementPanel suggestions={faqSuggestions} />
 
           <ClusterMapChart
             data={clusterMap}
@@ -171,7 +185,6 @@ export default function ClusterDashboard() {
           />
 
           <ClusterFrequencyChart data={getSimulatedTimeline(filteredClusters)} />
-
           <ClusterTable clusters={filteredClusters} onReview={handleOpenModal} />
         </>
       )}
