@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export default function ClusterMapChart({ data }) {
+export default function ClusterMapChart({ data, onSelectCluster }) {
   const grouped = data.reduce((acc, point) => {
     const label = point.label;
     if (!acc[label]) acc[label] = [];
@@ -21,13 +21,13 @@ export default function ClusterMapChart({ data }) {
 
   return (
     <div className="w-full h-[500px] bg-white shadow p-4 rounded">
-      <h2 className="text-lg font-semibold mb-4">Cluster Map</h2>
+      <h2 className="text-lg font-semibold mb-4">🗺️ UMAP Cluster Map</h2>
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart>
           <CartesianGrid />
-          <XAxis type="number" dataKey="x" name="X" />
-          <YAxis type="number" dataKey="y" name="Y" />
-          <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+          <XAxis type="number" dataKey="x" />
+          <YAxis type="number" dataKey="y" />
+          <Tooltip />
           <Legend />
           {Object.entries(grouped).map(([label, points], index) => (
             <Scatter
@@ -35,6 +35,7 @@ export default function ClusterMapChart({ data }) {
               name={`Cluster ${label}`}
               data={points}
               fill={`hsl(${(index * 67) % 360}, 70%, 50%)`}
+              onClick={(e) => onSelectCluster(parseInt(label))}
             />
           ))}
         </ScatterChart>
@@ -42,3 +43,4 @@ export default function ClusterMapChart({ data }) {
     </div>
   );
 }
+
