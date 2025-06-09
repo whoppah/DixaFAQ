@@ -57,6 +57,9 @@ def cluster_results(request):
         #score
         score_data = gpt.score_resolution(top_message, matched_faq)
         resolution_reason = score_data.get("reason", "")
+        faq_suggestion = None
+        if coverage_label in ["Not", "Partially"]:
+            faq_suggestion = gpt.suggest_faq(top_message)
         
         result_data.append({
             "cluster_id": cluster_id,
@@ -74,6 +77,7 @@ def cluster_results(request):
             "created_at": created_at.isoformat() if created_at else None,
             "coverage": coverage_label,
             "resolution_reason": resolution_reason,
+            "suggested_faq": faq_suggestion,
         })
 
     serialized = ClusterResultSerializer(result_data, many=True)
