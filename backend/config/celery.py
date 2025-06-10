@@ -15,7 +15,7 @@ app.conf.timezone = 'Europe/Amsterdam'
 app.conf.beat_schedule = {
     "weekly-download-job": {
         "task": "download_and_process",
-        "schedule": crontab(minute=0, hour=10, day_of_week=2),  # Every Monday at 10:50 PM
+        "schedule": crontab(minute=45, hour=15, day_of_week=2),  # Every Monday at 10:50 PM
         "options": {"expires": 9000},  #expires in 2.5 hour
     },
 }
