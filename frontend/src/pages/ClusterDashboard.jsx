@@ -30,16 +30,19 @@ export default function ClusterDashboard() {
     async function fetchData() {
       try {
         const res = await axios.get("/api/faq/clusters");
-        setClusters(res.data.clusters);
-        setClusterMap(res.data.cluster_map);
+        setClusters(res.data?.clusters || []);
+        setClusterMap(res.data?.cluster_map || []);
       } catch (err) {
         console.error("Failed to load clusters:", err);
+        setClusters([]); //fallback
+        setClusterMap([]);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
   }, []);
+
 
   const handleOpenModal = (cluster) => {
     setSelectedCluster(cluster);
