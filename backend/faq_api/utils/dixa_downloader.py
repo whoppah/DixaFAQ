@@ -1,4 +1,4 @@
-#backend/utils/dixa_downloader.py
+#backend/faq_api/utils/dixa_downloader.py
 import requests
 import os
 import json
