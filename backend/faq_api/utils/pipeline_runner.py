@@ -1,4 +1,4 @@
-#backend/utils/pipeline_runner.py
+#backend/faq_api/utils/pipeline_runner.py
 from django.conf import settings
 from faq_api.models import Message, FAQ, ClusterResult, ClusterRun
 from faq_api.utils.clustering import MessageClusterer, extract_keywords, get_cluster_map_coords
