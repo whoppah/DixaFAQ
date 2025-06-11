@@ -1,4 +1,4 @@
-#backend/utils/embedding.py
+#backend/faq_api/utils/embedding.py
 import os
 import openai
 import json
