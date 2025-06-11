@@ -1,6 +1,8 @@
 //frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
@@ -11,6 +13,9 @@ import ResolutionScoreBarChart from "../components/ResolutionScoreBarChart";
 import ResolutionTimelineChart from "../components/ResolutionTimelineChart";
 import FAQImprovementPanel from "../components/FAQImprovementPanel";
 import TopGapsByTopicChart from "../components/TopGapsByTopicChart";
+import TriggerPipelineButton from "../components/TriggerPipelineButton";
+
+axios.defaults.withCredentials = true;
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
@@ -18,31 +23,37 @@ export default function ClusterDashboard() {
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Filters
-  const [sentimentFilter, setSentimentFilter] = useState("All");
-  const [keywordFilter, setKeywordFilter] = useState("");
-  const [coverageFilter, setCoverageFilter] = useState("All");
-  const [minResolutionScore, setMinResolutionScore] = useState(1);
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const navigate = useNavigate();
+
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/faq/clusters");
+      setClusters(res.data?.clusters || []);
+      setClusterMap(res.data?.cluster_map || []);
+    } catch (err) {
+      console.error("Failed to load clusters:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const res = await axios.get("/api/me/");
+      setUser(res.data);
+    } catch (err) {
+      console.warn("Not authenticated, redirecting...");
+      navigate("/login");
+    }
+  };
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await axios.get("/api/faq/clusters");
-        setClusters(res.data?.clusters || []);
-        setClusterMap(res.data?.cluster_map || []);
-      } catch (err) {
-        console.error("Failed to load clusters:", err);
-        setClusters([]); //fallback
-        setClusterMap([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+    fetchUser();
+    refreshData();
   }, []);
-
 
   const handleOpenModal = (cluster) => {
     setSelectedCluster(cluster);
@@ -60,24 +71,19 @@ export default function ClusterDashboard() {
   const filteredClusters = clusters.filter((cluster) => {
     const sentimentMatch =
       sentimentFilter === "All" || cluster.sentiment === sentimentFilter;
-
     const keywordMatch =
       keywordFilter === "" ||
       cluster.keywords.some((k) =>
         k.toLowerCase().includes(keywordFilter.toLowerCase())
       );
-
     const coverageMatch =
       coverageFilter === "All" || cluster.coverage === coverageFilter;
-
-    const resolutionMatch =
-      cluster.resolution_score >= minResolutionScore;
+    const resolutionMatch = cluster.resolution_score >= minResolutionScore;
 
     const date = new Date(cluster.created_at);
     const from = dateRange.from ? new Date(dateRange.from) : null;
     const to = dateRange.to ? new Date(dateRange.to) : null;
-    const dateMatch =
-      (!from || date >= from) && (!to || date <= to);
+    const dateMatch = (!from || date >= from) && (!to || date <= to);
 
     return (
       sentimentMatch &&
@@ -88,38 +94,46 @@ export default function ClusterDashboard() {
     );
   });
 
+  const [sentimentFilter, setSentimentFilter] = useState("All");
+  const [keywordFilter, setKeywordFilter] = useState("");
+  const [coverageFilter, setCoverageFilter] = useState("All");
+  const [minResolutionScore, setMinResolutionScore] = useState(1);
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
   const faqSuggestions = filteredClusters
-    .filter(c => c.faq_suggestion && c.faq_suggestion.question)
-    .map(c => ({
+    .filter((c) => c.faq_suggestion && c.faq_suggestion.question)
+    .map((c) => ({
       clusterId: c.cluster_id,
       question: c.faq_suggestion.question,
       answer: c.faq_suggestion.answer,
       reason: c.resolution_reason,
       coverage: c.coverage,
-      matchedFaq: c.matched_faq
+      matchedFaq: c.matched_faq,
     }));
 
   const getSimulatedTimeline = (clusters) =>
     clusters.map((c, i) => ({
       cluster_id: c.cluster_id,
-      date: c.created_at || new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
+      date:
+        c.created_at ||
+        new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
     }));
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-10">
       <h1 className="text-3xl font-bold text-blue-700">📊 Cluster Insight Dashboard</h1>
 
+      {user?.is_admin && (
+        <TriggerPipelineButton onPipelineComplete={refreshData} isAdmin={true} />
+      )}
+
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
         <>
-          {/* Filter Controls */}
+          {/* Filters */}
           <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 items-center">
-            <select
-              className="border p-2 rounded"
-              value={sentimentFilter}
-              onChange={(e) => setSentimentFilter(e.target.value)}
-            >
+            <select className="border p-2 rounded" value={sentimentFilter} onChange={(e) => setSentimentFilter(e.target.value)}>
               <option value="All">All Sentiments</option>
               <option value="Positive">Positive</option>
               <option value="Neutral">Neutral</option>
@@ -134,11 +148,7 @@ export default function ClusterDashboard() {
               onChange={(e) => setKeywordFilter(e.target.value)}
             />
 
-            <select
-              className="border p-2 rounded"
-              value={coverageFilter}
-              onChange={(e) => setCoverageFilter(e.target.value)}
-            >
+            <select className="border p-2 rounded" value={coverageFilter} onChange={(e) => setCoverageFilter(e.target.value)}>
               <option value="All">All Coverage</option>
               <option value="Fully">Fully</option>
               <option value="Partially">Partially</option>
@@ -155,20 +165,8 @@ export default function ClusterDashboard() {
               onChange={(e) => setMinResolutionScore(parseInt(e.target.value))}
             />
 
-            <input
-              type="date"
-              className="border p-2 rounded"
-              onChange={(e) =>
-                setDateRange({ ...dateRange, from: e.target.value })
-              }
-            />
-            <input
-              type="date"
-              className="border p-2 rounded"
-              onChange={(e) =>
-                setDateRange({ ...dateRange, to: e.target.value })
-              }
-            />
+            <input type="date" className="border p-2 rounded" onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })} />
+            <input type="date" className="border p-2 rounded" onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })} />
           </div>
 
           {/* Charts */}
@@ -182,10 +180,7 @@ export default function ClusterDashboard() {
           <TopGapsByTopicChart clusters={filteredClusters} />
           <FAQImprovementPanel suggestions={faqSuggestions} />
 
-          <ClusterMapChart
-            data={clusterMap}
-            onSelectCluster={handleSelectClusterFromMap}
-          />
+          <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
 
           <ClusterFrequencyChart data={getSimulatedTimeline(filteredClusters)} />
           <ClusterTable clusters={filteredClusters} onReview={handleOpenModal} />
@@ -193,11 +188,7 @@ export default function ClusterDashboard() {
       )}
 
       {selectedCluster && (
-        <FAQMatchModal
-          open={isOpen}
-          onClose={() => setIsOpen(false)}
-          cluster={selectedCluster}
-        />
+        <FAQMatchModal open={isOpen} onClose={() => setIsOpen(false)} cluster={selectedCluster} />
       )}
     </div>
   );
