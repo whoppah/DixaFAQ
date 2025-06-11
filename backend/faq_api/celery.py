@@ -1,4 +1,4 @@
-#backend/config/celery.py
+#backend/faq_api/celery.py
 import os
 from celery import Celery
 from celery.schedules import crontab
