@@ -7,7 +7,7 @@ from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.sentiment import SentimentAnalyzer
 from datetime import datetime
 
-def process_clusters_and_save(snapshot_path=None):
+def process_clusters_and_save():
     messages = list(
         Message.objects.exclude(embedding=None).values("message_id", "text", "embedding", "created_at")
     )
@@ -86,4 +86,3 @@ def process_clusters_and_save(snapshot_path=None):
             "topic_label": topic_label,
         })
 
-    return result_data, cluster_map
