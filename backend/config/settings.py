@@ -20,6 +20,9 @@ DIXA_API_TOKEN = os.getenv("DIXA_API_TOKEN", "")
 ELEVIO_API_KEY = os.getenv("ELEVIO_API_KEY", "")
 ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 
+# === LOGIN ===
+LOGIN_URL = "/accounts/login/"
+
 # === DATABASE ===
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
