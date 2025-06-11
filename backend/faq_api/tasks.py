@@ -3,13 +3,13 @@ import os
 import json
 import datetime
 import tempfile
-import pytz
 from celery import shared_task
 from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
 from faq_api.utils.preprocess import MessagePreprocessor
 from faq_api.utils.embedding import Tokenizer
 from faq_api.models import Message
+from faq_api.utils.pipeline_runner import process_clusters_and_save
 from google.cloud import storage
 
 def setup_google_credentials_from_env():
@@ -59,8 +59,7 @@ def async_download_and_process():
         gcs_prefix = f"faq_pipeline/{timestamp}"
         summary["timestamp"] = timestamp
 
-        # Download Dixa
-        print("📥 Downloading Dixa")
+        # Download Dixa messages
         dixa = DixaDownloader(
             api_token=dixa_token,
             start_date=datetime.datetime(2025, 5, 1),
@@ -73,18 +72,17 @@ def async_download_and_process():
             data = json.load(f)
             summary["dixa_message_count"] = len(data.get("messages", []))
 
-        # Download Elevio
-        print("📥 Downloading Elevio")
+        # Download Elevio FAQs
         elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
         elevio_output = "/tmp/elevio_faqs.json"
         elevio.download_all_faqs(output_path=elevio_output)
 
-        # Preprocess
+        # Preprocess messages
         cleaned_path = "/tmp/cleaned.json"
         processor = MessagePreprocessor()
         processor.process_file(dixa_output, cleaned_path)
 
-        # Embed
+        # Generate embeddings
         embeddings_path = "/tmp/embeddings.json"
         tokenizer = Tokenizer(
             messages_path=cleaned_path,
@@ -102,8 +100,7 @@ def async_download_and_process():
             saved_count += 1
         summary["embedding_saved"] = saved_count
 
-        # Upload
-        print("☁️ Uploading to GCS")
+        # Upload raw files (optional)
         for local_path, gcs_name in [
             (dixa_output, f"{gcs_prefix}/dixa_messages.json"),
             (elevio_output, f"{gcs_prefix}/elevio_faqs.json"),
@@ -112,6 +109,10 @@ def async_download_and_process():
         ]:
             uploaded = upload_to_gcs(gcs_bucket, local_path, gcs_name)
             summary["files_uploaded"].append(f"gs://{gcs_bucket}/{uploaded}")
+
+        # Save clusters to DB, grouped by ClusterRun
+        print("🧠 Running clustering + GPT analysis...")
+        process_clusters_and_save()
 
         print("✅ Pipeline completed")
         print("📊 Summary:", json.dumps(summary, indent=2))
