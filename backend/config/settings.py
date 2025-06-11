@@ -20,8 +20,9 @@ DIXA_API_TOKEN = os.getenv("DIXA_API_TOKEN", "")
 ELEVIO_API_KEY = os.getenv("ELEVIO_API_KEY", "")
 ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 
-# === LOGIN ===
+# === LOGIN Urls ===
 LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = '/dashboard/' 
 
 # === DATABASE ===
 DATABASES = {
