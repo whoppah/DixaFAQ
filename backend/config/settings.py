@@ -54,6 +54,7 @@ CELERY_TIMEZONE = "Europe/Amsterdam"
 USE_TZ = True
 TIME_ZONE = "Europe/Amsterdam"
 CELERY_ENABLE_UTC = False 
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # === APPLICATIONS ===
 INSTALLED_APPS = [
