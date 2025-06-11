@@ -1,13 +1,16 @@
 #backend/utils/pipeline_runner.py
-import json
 from django.conf import settings
-from faq_api.models import Message, FAQ, ClusterResult
+from faq_api.models import Message, FAQ, ClusterResult, ClusterRun
 from faq_api.utils.clustering import MessageClusterer, extract_keywords, get_cluster_map_coords
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.sentiment import SentimentAnalyzer
 from datetime import datetime
 
 def process_clusters_and_save():
+    ClusterRun.objects.all().delete()
+
+    run = ClusterRun.objects.create(notes="Automated weekly pipeline")
+
     messages = list(
         Message.objects.exclude(embedding=None).values("message_id", "text", "embedding", "created_at")
     )
@@ -18,11 +21,13 @@ def process_clusters_and_save():
     centroids = clusterer.compute_centroids(clustered)
     matches = clusterer.match_faqs(centroids, faqs)
 
+    #Generate and store cluster map
+    cluster_map = get_cluster_map_coords(messages, labels, vecs)
+    run.cluster_map = cluster_map
+    run.save()
+
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
     sentiment_analyzer = SentimentAnalyzer()
-    cluster_map = get_cluster_map_coords(messages, labels, vecs)
-
-    result_data = []
 
     for cluster_id, items in clustered.items():
         top_message = items[0]["text"]
@@ -47,42 +52,21 @@ def process_clusters_and_save():
         keywords = extract_keywords([msg["text"] for msg in items])
         topic_label = gpt.label_topic(items)
 
-        # Save to DB
-        ClusterResult.objects.update_or_create(
+        ClusterResult.objects.create(
+            run=run,
             cluster_id=cluster_id,
+            message_count=len(items),
+            top_message=top_message,
+            matched_faq=matched_faq,
+            similarity=similarity,
+            gpt_evaluation=gpt_eval,
+            sentiment=sentiment,
+            keywords=keywords,
+            summary=summary,
             created_at=created_at,
-            defaults={
-                "message_count": len(items),
-                "top_message": top_message,
-                "matched_faq": matched_faq,
-                "similarity": similarity,
-                "gpt_evaluation": gpt_eval,
-                "sentiment": sentiment,
-                "keywords": keywords,
-                "summary": summary,
-                "coverage": coverage_label,
-                "resolution_score": resolution_score,
-                "resolution_reason": resolution_reason,
-                "faq_suggestion": faq_suggestion,
-                "topic_label": topic_label,
-            }
+            coverage=coverage_label,
+            resolution_score=resolution_score,
+            resolution_reason=resolution_reason,
+            faq_suggestion=faq_suggestion,
+            topic_label=topic_label
         )
-
-        result_data.append({
-            "cluster_id": cluster_id,
-            "message_count": len(items),
-            "top_message": top_message,
-            "matched_faq": matched_faq,
-            "similarity": round(similarity, 4),
-            "gpt_evaluation": gpt_eval,
-            "sentiment": sentiment,
-            "keywords": keywords,
-            "summary": summary,
-            "coverage": coverage_label,
-            "resolution_score": resolution_score,
-            "resolution_reason": resolution_reason,
-            "faq_suggestion": faq_suggestion,
-            "created_at": created_at.isoformat(),
-            "topic_label": topic_label,
-        })
-
