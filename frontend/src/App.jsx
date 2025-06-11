@@ -18,7 +18,7 @@ function App() {
         </nav>
         <Routes>
           <Route path="/" element={<ClusterDashboard />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/#/login" element={<LoginPage />} />
         </Routes>
       </div>
     </Router>
