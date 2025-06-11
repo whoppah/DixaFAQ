@@ -1,4 +1,4 @@
-#backend/management/commands/process_and_embed.py
+#backend/faq_api/management/commands/process_and_embed.py
 import os
 import json
 from django.core.management.base import BaseCommand
