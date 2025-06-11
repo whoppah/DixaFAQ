@@ -1,5 +1,4 @@
 //frontend/src/App.jsx
-// frontend/src/App.jsx
 import React, { useEffect, useState } from "react";
 import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import ClusterDashboard from "./pages/ClusterDashboard";
