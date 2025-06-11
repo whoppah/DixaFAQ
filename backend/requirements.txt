@@ -18,3 +18,4 @@ redis>=5.0
 reportlab>=4.0
 ipython>=8.0
 google-cloud-storage
+hdbscan>=0.8.33  
