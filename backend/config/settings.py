@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-key")
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]  # For dev/testing; tighten in prod
-CSRF_TRUSTED_ORIGINS = ["*"]  # For dev/testing; tighten in prod
+CSRF_TRUSTED_ORIGINS = ["https://frontend-dixafaq-production.up.railway.app"]  
 
 # === API Keys ===
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -24,6 +24,22 @@ ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
 }
+# === TEMPLATES ===
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],  
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 # === CELERY CONFIGURATION ===
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -78,3 +94,6 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
     ]
 }
+# === DEFAULT ===
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
