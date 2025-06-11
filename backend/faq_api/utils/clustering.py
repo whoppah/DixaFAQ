@@ -6,7 +6,7 @@ from collections import Counter
 import re
 import string
 import umap
-import numpy as np
+
 
 class MessageClusterer:
     def __init__(self, min_cluster_size=10):
@@ -65,7 +65,7 @@ class MessageClusterer:
 
         return results
 
-    def extract_keywords(texts, top_n=10):
+    def extract_keywords(self, texts, top_n=10):
         words = []
         for text in texts:
             text = text.lower()
@@ -76,7 +76,7 @@ class MessageClusterer:
         filtered = [w for w in words if w not in stopwords and len(w) > 2]
         return [word for word, _ in Counter(filtered).most_common(top_n)]
 
-    def get_cluster_map_coords(embeddings, labels, vecs=None):
+    def get_cluster_map_coords(self, embeddings, labels, vecs=None):
         if vecs is None:
             vecs = np.array([e['embedding'] for e in embeddings])
         
