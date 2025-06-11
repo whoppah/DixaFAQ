@@ -1,4 +1,4 @@
-#backend/management/commands/download_dixa_elevio.py
+#backend/faq_api/management/commands/download_dixa_elevio.py
 from django.core.management.base import BaseCommand
 from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
