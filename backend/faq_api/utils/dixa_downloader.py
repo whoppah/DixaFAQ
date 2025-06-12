@@ -46,8 +46,8 @@ class DixaDownloader:
 
     def fetch_data(self, url, start, end):
         params = {
-            "created_after": start.isoformat(),
-            "created_before": end.isoformat()
+            "created_after": start.strftime("%Y-%m-%d"),
+            "created_before": end.strftime("%Y-%m-%d")
         }
         print(f"Fetching data from {start} to {end}")
         response = requests.get(url, headers=self.headers, params=params)
