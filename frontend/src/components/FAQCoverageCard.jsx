@@ -1,7 +1,7 @@
 //frontend/src/components/FAQCoverageCard.jsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Progress } from "@/components/ui/Progress";
 
 export default function FAQCoverageCard({ fully, partially, none }) {
   const total = fully + partially + none || 1;
