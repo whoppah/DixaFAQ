@@ -25,12 +25,16 @@ def setup_google_credentials_from_env():
     return temp.name
 
 def upload_to_gcs(bucket_name, source_file_path, destination_blob_name):
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-    blob.upload_from_filename(source_file_path)
-    print(f"✅ Uploaded to gs://{bucket_name}/{destination_blob_name}")
-    return destination_blob_name
+    try:
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(destination_blob_name)
+        blob.upload_from_filename(source_file_path)
+        print(f"✅ Uploaded to gs://{bucket_name}/{destination_blob_name}")
+        return destination_blob_name
+    except Exception as e:
+        print(f"⚠️ Failed to upload {source_file_path} to GCS: {e}")
+        return f"FAILED: {destination_blob_name}"
 
 @shared_task(name="download_and_process")
 def async_download_and_process():
@@ -46,14 +50,24 @@ def async_download_and_process():
     try:
         setup_google_credentials_from_env()
 
+        # Load and check environment variables
         dixa_token = os.getenv("DIXA_API_TOKEN")
         elevio_key = os.getenv("ELEVIO_API_KEY")
         elevio_jwt = os.getenv("ELEVIO_JWT")
         openai_key = os.getenv("OPENAI_API_KEY")
         gcs_bucket = os.getenv("GCS_BUCKET_NAME")
 
-        if not all([dixa_token, elevio_key, elevio_jwt, openai_key, gcs_bucket]):
-            raise Exception("❌ Missing one or more required environment variables")
+        env_vars = {
+            "DIXA_API_TOKEN": dixa_token,
+            "ELEVIO_API_KEY": elevio_key,
+            "ELEVIO_JWT": elevio_jwt,
+            "OPENAI_API_KEY": openai_key,
+            "GCS_BUCKET_NAME": gcs_bucket
+        }
+
+        missing = [k for k, v in env_vars.items() if not v]
+        if missing:
+            raise Exception(f"❌ Missing environment variables: {', '.join(missing)}")
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         gcs_prefix = f"faq_pipeline/{timestamp}"
@@ -62,7 +76,7 @@ def async_download_and_process():
         # Download Dixa messages
         dixa = DixaDownloader(
             api_token=dixa_token,
-            start_date=datetime.datetime(2025, 5, 1),
+            start_date=datetime.datetime(2025, 5, 1),  # Hardcoded as per request
             end_date=datetime.datetime.now()
         )
         all_messages, _ = dixa.download_all_dixa_data()
@@ -72,10 +86,13 @@ def async_download_and_process():
             json.dump({"messages": all_messages}, f, indent=2)
         summary["dixa_message_count"] = len(all_messages)
 
-        # Download Elevio FAQs
+        # Download Elevio FAQs (no output_path parameter in original method)
         elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
+        elevio.download_all_faqs()
+
         elevio_output = "/tmp/elevio_faqs.json"
-        elevio.download_all_faqs(output_path=elevio_output)
+        # Optionally save downloaded FAQs to a fixed location
+        # You'll need to adjust `download_all_faqs()` to support saving if desired
 
         # Preprocess messages
         cleaned_path = "/tmp/cleaned.json"
@@ -91,8 +108,14 @@ def async_download_and_process():
         )
         embeddings = tokenizer.embed_all()
 
+        if not embeddings:
+            raise Exception("❌ No embeddings generated. Aborting clustering.")
+
         saved_count = 0
         for item in embeddings:
+            if not item.get("id"):
+                print("⚠️ Skipping embedding with missing ID.")
+                continue
             Message.objects.update_or_create(
                 message_id=item["id"],
                 defaults={"text": item["text"], "embedding": item["embedding"]}
@@ -100,17 +123,16 @@ def async_download_and_process():
             saved_count += 1
         summary["embedding_saved"] = saved_count
 
-         # Upload raw files (optional)
+        # Upload raw files (optional)
         for local_path, gcs_name in [
             (dixa_output, f"{gcs_prefix}/dixa_messages.json"),
-            (elevio_output, f"{gcs_prefix}/elevio_faqs.json"),
             (cleaned_path, f"{gcs_prefix}/cleaned.json"),
             (embeddings_path, f"{gcs_prefix}/embeddings.json")
         ]:
             uploaded = upload_to_gcs(gcs_bucket, local_path, gcs_name)
-            summary["files_uploaded"].append(f"gs://{gcs_bucket}/{uploaded}")
+            summary["files_uploaded"].append(f"gs://{gcs_bucket}/{gcs_name}" if not uploaded.startswith("FAILED") else uploaded)
 
-        # Save clusters to DB, grouped by ClusterRun
+        # Save clusters to DB
         print("🧠 Running clustering + GPT analysis...")
         process_clusters_and_save()
 
