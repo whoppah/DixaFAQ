@@ -1,36 +1,42 @@
 //frontend/src/components/FAQCoverageCard.jsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 
-export default function FAQCoverageCard({ full, partial, none }) {
-  const total = full + partial + none;
-  const fullPct = total ? ((full / total) * 100).toFixed(1) : 0;
-  const partialPct = total ? ((partial / total) * 100).toFixed(1) : 0;
-  const nonePct = total ? ((none / total) * 100).toFixed(1) : 0;
+export default function FAQCoverageCard({ coverageStats }) {
+  const { fully, partially, notCovered } = coverageStats;
+  const total = fully + partially + notCovered;
+
+  const barWidth = (value) => `${(value / total) * 100}%`;
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>FAQ Coverage Breakdown</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        <div>
-          <span className="font-medium">Fully Covered</span>
-          <Progress value={fullPct} className="mt-1" />
-          <span className="text-gray-600">{fullPct}%</span>
+    <div className="bg-white rounded-xl shadow-md p-6 transition-shadow hover:shadow-lg">
+      <h2 className="text-lg font-semibold text-gray-800 mb-1">FAQ Coverage</h2>
+      <p className="text-sm text-gray-500 mb-4">How well user questions are covered</p>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-700">
+          <span>Fully Covered</span>
+          <span>{fully}</span>
         </div>
-        <div>
-          <span className="font-medium">Partially Covered</span>
-          <Progress value={partialPct} className="mt-1 bg-yellow-400" />
-          <span className="text-gray-600">{partialPct}%</span>
+        <div className="w-full bg-gray-100 h-2 rounded-full">
+          <div className="h-full bg-green-500 rounded-full" style={{ width: barWidth(fully) }} />
         </div>
-        <div>
-          <span className="font-medium">Not Covered</span>
-          <Progress value={nonePct} className="mt-1 bg-red-400" />
-          <span className="text-gray-600">{nonePct}%</span>
+
+        <div className="flex justify-between text-sm text-gray-700">
+          <span>Partially Covered</span>
+          <span>{partially}</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="w-full bg-gray-100 h-2 rounded-full">
+          <div className="h-full bg-yellow-400 rounded-full" style={{ width: barWidth(partially) }} />
+        </div>
+
+        <div className="flex justify-between text-sm text-gray-700">
+          <span>Not Covered</span>
+          <span>{notCovered}</span>
+        </div>
+        <div className="w-full bg-gray-100 h-2 rounded-full">
+          <div className="h-full bg-red-400 rounded-full" style={{ width: barWidth(notCovered) }} />
+        </div>
+      </div>
+    </div>
   );
 }
