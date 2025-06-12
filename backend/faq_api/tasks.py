@@ -65,12 +65,12 @@ def async_download_and_process():
             start_date=datetime.datetime(2025, 5, 1),
             end_date=datetime.datetime.now()
         )
-        dixa_output = "/tmp/dixa_messages.json"
-        dixa.download_all_dixa_data(output_path=dixa_output)
+        all_messages, _ = dixa.download_all_dixa_data()
 
-        with open(dixa_output) as f:
-            data = json.load(f)
-            summary["dixa_message_count"] = len(data.get("messages", []))
+        dixa_output = "/tmp/dixa_messages.json"
+        with open(dixa_output, "w", encoding="utf-8") as f:
+            json.dump({"messages": all_messages}, f, indent=2)
+        summary["dixa_message_count"] = len(all_messages)
 
         # Download Elevio FAQs
         elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
@@ -107,17 +107,4 @@ def async_download_and_process():
             (cleaned_path, f"{gcs_prefix}/cleaned.json"),
             (embeddings_path, f"{gcs_prefix}/embeddings.json")
         ]:
-            uploaded = upload_to_gcs(gcs_bucket, local_path, gcs_name)
-            summary["files_uploaded"].append(f"gs://{gcs_bucket}/{uploaded}")
-
-        # Save clusters to DB, grouped by ClusterRun
-        print("🧠 Running clustering + GPT analysis...")
-        process_clusters_and_save()
-
-        print("✅ Pipeline completed")
-        print("📊 Summary:", json.dumps(summary, indent=2))
-        return summary
-
-    except Exception as e:
-        print(f"❌ Error in pipeline: {e}")
-        raise
+            uploaded = upload_to_gcs(g
