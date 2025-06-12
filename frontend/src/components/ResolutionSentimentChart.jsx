@@ -1,7 +1,5 @@
-//frontend/src/components/ResolutionSentimentChart.jsx
+// frontend/src/components/ResolutionSentimentChart.jsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   BarElement,
@@ -10,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { Bar } from "react-chartjs-2";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -37,29 +36,62 @@ export default function ResolutionSentimentChart({ clusters }) {
       {
         label: "Avg Resolution Score",
         data: categories.map((cat) => averageScore(scoresBySentiment[cat])),
-        backgroundColor: ["#22c55e", "#facc15", "#ef4444"],
+        backgroundColor: ["#16a34a", "#facc15", "#dc2626"],
+        borderRadius: 8,
+        barThickness: 36,
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: { display: false },
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.parsed.y} / 5`,
+        },
+      },
     },
     scales: {
-      y: { beginAtZero: true, max: 5 },
+      y: {
+        beginAtZero: true,
+        max: 5,
+        ticks: {
+          stepSize: 1,
+          color: "#64748b",
+        },
+        grid: {
+          color: "#e2e8f0",
+        },
+      },
+      x: {
+        ticks: {
+          color: "#334155",
+          font: {
+            weight: "600",
+          },
+        },
+        grid: {
+          display: false,
+        },
+      },
     },
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Resolution Score by Sentiment</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="bg-white rounded-xl shadow-md p-6 w-full h-[350px]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Resolution Score by Sentiment
+        </h2>
+      </div>
+      <div className="h-full w-full">
         <Bar data={data} options={options} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
