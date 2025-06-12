@@ -1,24 +1,18 @@
 //frontend/src/components/TopQuestionsCard.jsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-export default function TopQuestionsCard({ topQuestions }) {
+export default function TopQuestionsCard({ questions }) {
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Top 15 Customer Questions</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {topQuestions && topQuestions.length > 0 ? (
-          <ol className="list-decimal list-inside space-y-1 text-sm text-gray-800">
-            {topQuestions.slice(0, 15).map((question, idx) => (
-              <li key={idx}>{question}</li>
-            ))}
-          </ol>
-        ) : (
-          <p className="text-sm text-gray-500">No questions found.</p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-xl shadow-md p-6 transition-shadow hover:shadow-lg">
+      <h2 className="text-lg font-semibold text-gray-800 mb-1">Top 15 Questions</h2>
+      <p className="text-sm text-gray-500 mb-4">Most frequent user queries</p>
+      <ol className="space-y-2 list-decimal list-inside text-sm text-gray-700">
+        {questions.slice(0, 15).map((q, idx) => (
+          <li key={idx} className="hover:text-blue-600 transition-colors">
+            {q}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
