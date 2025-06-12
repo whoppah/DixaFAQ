@@ -1,7 +1,7 @@
 //frontend/src/components/MismatchAnalysisCard.jsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 
 export default function MismatchAnalysisCard({ clusters }) {
   const mismatches = clusters.filter(
