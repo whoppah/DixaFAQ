@@ -1,11 +1,14 @@
 //frotend/src/components/ui/Card.jsx
 import React from "react";
-import { cn } from "@/lib/utils"; 
+import { cn } from "@/lib/utils";
 
 export function Card({ className, children, ...props }) {
   return (
     <div
-      className={cn("bg-white border shadow-sm rounded-lg p-6", className)}
+      className={cn(
+        "bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden transition-all hover:shadow-md",
+        className
+      )}
       {...props}
     >
       {children}
@@ -13,15 +16,49 @@ export function Card({ className, children, ...props }) {
   );
 }
 
-export function CardHeader({ title, description }) {
+export function CardHeader({ className, children }) {
   return (
-    <div className="mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    <div className={cn("px-6 pt-5 pb-3 border-b border-gray-100", className)}>
+      {children}
     </div>
   );
 }
 
-export function CardContent({ children }) {
-  return <div className="space-y-4">{children}</div>;
+export function CardTitle({ children, className }) {
+  return (
+    <h3
+      className={cn(
+        "text-lg font-semibold tracking-tight text-gray-900",
+        className
+      )}
+    >
+      {children}
+    </h3>
+  );
+}
+
+export function CardDescription({ children, className }) {
+  return (
+    <p
+      className={cn("text-sm text-gray-500 mt-1 leading-relaxed", className)}
+    >
+      {children}
+    </p>
+  );
+}
+
+export function CardContent({ children, className }) {
+  return (
+    <div className={cn("px-6 py-4 space-y-4", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function CardFooter({ children, className }) {
+  return (
+    <div className={cn("px-6 pb-4 pt-2 border-t border-gray-100", className)}>
+      {children}
+    </div>
+  );
 }
