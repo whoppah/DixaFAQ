@@ -1,4 +1,4 @@
-//frontend/src/components/ClusterMapCard.jsx
+//frontend/src/components/dashboard/ClusterMapCard.jsx
 import React from "react";
 import {
   ScatterChart,
