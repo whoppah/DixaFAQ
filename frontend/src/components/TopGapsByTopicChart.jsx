@@ -1,6 +1,13 @@
+//frontend/src/components/TopGapsByTopicChart.jsx
 import React from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 
 export default function TopGapsByTopicChart({ clusters }) {
@@ -18,17 +25,14 @@ export default function TopGapsByTopicChart({ clusters }) {
   }));
 
   return (
-    <div className="bg-white shadow p-4 rounded w-full">
-      <h2 className="text-lg font-semibold mb-2">Top FAQ Gaps by Topic</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data} layout="vertical">
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" />
-          <YAxis dataKey="topic" type="category" width={200} />
-          <Tooltip />
-          <Bar dataKey="gaps" fill="#f87171" />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={data} layout="vertical">
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis type="number" />
+        <YAxis dataKey="topic" type="category" width={200} />
+        <Tooltip />
+        <Bar dataKey="gaps" fill="#f87171" />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
