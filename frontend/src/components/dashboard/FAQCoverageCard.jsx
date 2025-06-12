@@ -1,4 +1,4 @@
-//frontend/src/components/FAQCoverageCard.jsx
+//frontend/src/components/dashboard/FAQCoverageCard.jsx
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Progress } from "@/components/ui/Progress";
