@@ -1,4 +1,4 @@
-//frontend/src/components/MismatchAnalysisCard.jsx
+//frontend/src/components/dashboard/MismatchAnalysisCard.jsx
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
