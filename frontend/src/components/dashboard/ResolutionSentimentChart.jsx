@@ -1,4 +1,4 @@
-// frontend/src/components/ResolutionSentimentChart.jsx
+// frontend/src/components/dashboard/ResolutionSentimentChart.jsx
 import React from "react";
 import {
   Chart as ChartJS,
