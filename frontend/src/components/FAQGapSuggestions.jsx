@@ -1,25 +1,29 @@
 //frontend/src/components/FAQGapSuggestions.jsx
 import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function FAQGapSuggestions({ suggestions }) {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 transition-shadow hover:shadow-lg">
-      <h2 className="text-lg font-semibold text-gray-800 mb-1">Suggested FAQs</h2>
-      <p className="text-sm text-gray-500 mb-4">Based on gaps in chatbot coverage</p>
-
-      <div className="space-y-4">
-        {suggestions.length === 0 ? (
-          <p className="text-sm text-gray-500">No suggestions available</p>
-        ) : (
-          suggestions.map((s, idx) => (
-            <div key={idx} className="border rounded-lg p-3 hover:border-blue-500 transition">
-              <h3 className="text-sm font-medium text-blue-600">{s.question}</h3>
-              <p className="text-sm text-gray-700 mt-1">{s.answer}</p>
-              <p className="text-xs text-gray-400 mt-2">Reason: {s.reason}</p>
+    <Card className="bg-white shadow-md rounded-xl p-4 hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-gray-800">FAQ Improvement Suggestions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4 text-sm text-gray-700">
+          {suggestions.length === 0 && <p>No new suggestions at this time.</p>}
+          {suggestions.map((item, idx) => (
+            <div key={idx} className="border-b pb-2">
+              <p className="font-medium">{item.question}</p>
+              <p className="text-xs text-gray-500">Reason: {item.reason}</p>
+              <p className="text-xs text-gray-500">Matched FAQ: {item.matchedFaq || "None"}</p>
+              <div className="mt-1">
+                <Badge>{item.coverage}</Badge>
+              </div>
             </div>
-          ))
-        )}
-      </div>
-    </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
