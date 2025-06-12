@@ -100,11 +100,24 @@ def async_download_and_process():
             saved_count += 1
         summary["embedding_saved"] = saved_count
 
-        # Upload raw files (optional)
+         # Upload raw files (optional)
         for local_path, gcs_name in [
             (dixa_output, f"{gcs_prefix}/dixa_messages.json"),
             (elevio_output, f"{gcs_prefix}/elevio_faqs.json"),
             (cleaned_path, f"{gcs_prefix}/cleaned.json"),
             (embeddings_path, f"{gcs_prefix}/embeddings.json")
         ]:
-            uploaded = upload_to_gcs(g
+            uploaded = upload_to_gcs(gcs_bucket, local_path, gcs_name)
+            summary["files_uploaded"].append(f"gs://{gcs_bucket}/{uploaded}")
+
+        # Save clusters to DB, grouped by ClusterRun
+        print("🧠 Running clustering + GPT analysis...")
+        process_clusters_and_save()
+
+        print("✅ Pipeline completed")
+        print("📊 Summary:", json.dumps(summary, indent=2))
+        return summary
+
+    except Exception as e:
+        print(f"❌ Error in pipeline: {e}")
+        raise
