@@ -1,11 +1,10 @@
 //frontend/src/pages/ClusterDashboard.jsx
-// frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-import CardWrapper from "../components/CardWrapper"; // ✅ NEW
-import MetricCard from "../components/MetricCard"; // ⬅️ Optional, if you add top KPIs
+import CardWrapper from "../components/CardWrapper";  
+import MetricCard from "../components/MetricCard";  
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
@@ -124,7 +123,7 @@ export default function ClusterDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      <h1 className="text-4xl font-bold text-gray-800">📊 Cluster Insight Dashboard</h1>
+      <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
 
       {user?.is_admin && (
         <TriggerPipelineButton onPipelineComplete={refreshData} isAdmin={true} />
@@ -174,40 +173,40 @@ export default function ClusterDashboard() {
 
           {/* Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CardWrapper title="📊 Sentiment Distribution">
+            <CardWrapper title="Sentiment Distribution">
               <SentimentBarChart clusters={filteredClusters} />
             </CardWrapper>
 
-            <CardWrapper title="🥧 FAQ Match Quality">
+            <CardWrapper title="FAQ Match Quality">
               <CoveragePieChart clusters={filteredClusters} />
             </CardWrapper>
 
-            <CardWrapper title="📊 Resolution Score Distribution">
+            <CardWrapper title="Resolution Score Distribution">
               <ResolutionScoreBarChart clusters={filteredClusters} />
             </CardWrapper>
 
-            <CardWrapper title="📈 Avg. Resolution Score Over Time">
+            <CardWrapper title="Avg. Resolution Score Over Time">
               <ResolutionTimelineChart clusters={filteredClusters} />
             </CardWrapper>
           </div>
 
-          <CardWrapper title="🔍 Top FAQ Gaps by Topic">
+          <CardWrapper title="Top FAQ Gaps by Topic">
             <TopGapsByTopicChart clusters={filteredClusters} />
           </CardWrapper>
 
-          <CardWrapper title="🛠️ FAQ Improvement Suggestions">
+          <CardWrapper title="FAQ Improvement Suggestions">
             <FAQImprovementPanel suggestions={faqSuggestions} />
           </CardWrapper>
 
-          <CardWrapper title="🗺️ UMAP Cluster Map">
+          <CardWrapper title="Cluster Map">
             <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
           </CardWrapper>
 
-          <CardWrapper title="📅 Cluster Frequency Timeline">
+          <CardWrapper title="Cluster Frequency Timeline">
             <ClusterFrequencyChart data={getSimulatedTimeline(filteredClusters)} />
           </CardWrapper>
 
-          <CardWrapper title="📋 All Clusters">
+          <CardWrapper title="All Clusters">
             <ClusterTable clusters={filteredClusters} onReview={handleOpenModal} />
           </CardWrapper>
         </>
