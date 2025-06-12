@@ -20,27 +20,23 @@ export default function ClusterMapChart({ data, onSelectCluster }) {
   }, {});
 
   return (
-    <div className="w-full h-[500px] bg-white shadow p-4 rounded">
-      <h2 className="text-lg font-semibold mb-4">🗺️ UMAP Cluster Map</h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart>
-          <CartesianGrid />
-          <XAxis type="number" dataKey="x" />
-          <YAxis type="number" dataKey="y" />
-          <Tooltip />
-          <Legend />
-          {Object.entries(grouped).map(([label, points], index) => (
-            <Scatter
-              key={label}
-              name={`Cluster ${label}`}
-              data={points}
-              fill={`hsl(${(index * 67) % 360}, 70%, 50%)`}
-              onClick={(e) => onSelectCluster(parseInt(label))}
-            />
-          ))}
-        </ScatterChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={500}>
+      <ScatterChart>
+        <CartesianGrid />
+        <XAxis type="number" dataKey="x" />
+        <YAxis type="number" dataKey="y" />
+        <Tooltip />
+        <Legend />
+        {Object.entries(grouped).map(([label, points], index) => (
+          <Scatter
+            key={label}
+            name={`Cluster ${label}`}
+            data={points}
+            fill={`hsl(${(index * 67) % 360}, 70%, 50%)`}
+            onClick={(e) => onSelectCluster(parseInt(label))}
+          />
+        ))}
+      </ScatterChart>
+    </ResponsiveContainer>
   );
 }
-
