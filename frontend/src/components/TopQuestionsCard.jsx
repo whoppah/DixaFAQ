@@ -1,18 +1,20 @@
 //frontend/src/components/TopQuestionsCard.jsx
 import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function TopQuestionsCard({ questions }) {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 transition-shadow hover:shadow-lg">
-      <h2 className="text-lg font-semibold text-gray-800 mb-1">Top 15 Questions</h2>
-      <p className="text-sm text-gray-500 mb-4">Most frequent user queries</p>
-      <ol className="space-y-2 list-decimal list-inside text-sm text-gray-700">
-        {questions.slice(0, 15).map((q, idx) => (
-          <li key={idx} className="hover:text-blue-600 transition-colors">
-            {q}
-          </li>
-        ))}
-      </ol>
-    </div>
+    <Card className="bg-white shadow-md rounded-xl p-4 hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold text-gray-800">Top User Questions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
+          {questions.slice(0, 15).map((q, idx) => (
+            <li key={idx} className="truncate">{q}</li>
+          ))}
+        </ol>
+      </CardContent>
+    </Card>
   );
 }
