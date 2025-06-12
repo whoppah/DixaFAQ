@@ -1,8 +1,11 @@
 //frontend/src/pages/ClusterDashboard.jsx
+// frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+import CardWrapper from "../components/CardWrapper"; // ✅ NEW
+import MetricCard from "../components/MetricCard"; // ⬅️ Optional, if you add top KPIs
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
@@ -68,6 +71,12 @@ export default function ClusterDashboard() {
     }
   };
 
+  const [sentimentFilter, setSentimentFilter] = useState("All");
+  const [keywordFilter, setKeywordFilter] = useState("");
+  const [coverageFilter, setCoverageFilter] = useState("All");
+  const [minResolutionScore, setMinResolutionScore] = useState(1);
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
   const filteredClusters = clusters.filter((cluster) => {
     const sentimentMatch =
       sentimentFilter === "All" || cluster.sentiment === sentimentFilter;
@@ -94,12 +103,6 @@ export default function ClusterDashboard() {
     );
   });
 
-  const [sentimentFilter, setSentimentFilter] = useState("All");
-  const [keywordFilter, setKeywordFilter] = useState("");
-  const [coverageFilter, setCoverageFilter] = useState("All");
-  const [minResolutionScore, setMinResolutionScore] = useState(1);
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
-
   const faqSuggestions = filteredClusters
     .filter((c) => c.faq_suggestion && c.faq_suggestion.question)
     .map((c) => ({
@@ -120,8 +123,8 @@ export default function ClusterDashboard() {
     }));
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-10">
-      <h1 className="text-3xl font-bold text-blue-700">📊 Cluster Insight Dashboard</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+      <h1 className="text-4xl font-bold text-gray-800">📊 Cluster Insight Dashboard</h1>
 
       {user?.is_admin && (
         <TriggerPipelineButton onPipelineComplete={refreshData} isAdmin={true} />
@@ -132,8 +135,8 @@ export default function ClusterDashboard() {
       ) : (
         <>
           {/* Filters */}
-          <div className="bg-white p-4 rounded shadow flex flex-wrap gap-4 items-center">
-            <select className="border p-2 rounded" value={sentimentFilter} onChange={(e) => setSentimentFilter(e.target.value)}>
+          <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-wrap gap-4 items-center">
+            <select className="border p-2 rounded text-sm" value={sentimentFilter} onChange={(e) => setSentimentFilter(e.target.value)}>
               <option value="All">All Sentiments</option>
               <option value="Positive">Positive</option>
               <option value="Neutral">Neutral</option>
@@ -143,12 +146,12 @@ export default function ClusterDashboard() {
             <input
               type="text"
               placeholder="Filter by keyword..."
-              className="border p-2 rounded"
+              className="border p-2 rounded text-sm"
               value={keywordFilter}
               onChange={(e) => setKeywordFilter(e.target.value)}
             />
 
-            <select className="border p-2 rounded" value={coverageFilter} onChange={(e) => setCoverageFilter(e.target.value)}>
+            <select className="border p-2 rounded text-sm" value={coverageFilter} onChange={(e) => setCoverageFilter(e.target.value)}>
               <option value="All">All Coverage</option>
               <option value="Fully">Fully</option>
               <option value="Partially">Partially</option>
@@ -160,30 +163,53 @@ export default function ClusterDashboard() {
               min="1"
               max="5"
               placeholder="Min Resolution Score"
-              className="border p-2 rounded w-48"
+              className="border p-2 rounded w-48 text-sm"
               value={minResolutionScore}
               onChange={(e) => setMinResolutionScore(parseInt(e.target.value))}
             />
 
-            <input type="date" className="border p-2 rounded" onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })} />
-            <input type="date" className="border p-2 rounded" onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })} />
+            <input type="date" className="border p-2 rounded text-sm" onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })} />
+            <input type="date" className="border p-2 rounded text-sm" onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })} />
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SentimentBarChart clusters={filteredClusters} />
-            <CoveragePieChart clusters={filteredClusters} />
-            <ResolutionScoreBarChart clusters={filteredClusters} />
-            <ResolutionTimelineChart clusters={filteredClusters} />
+            <CardWrapper title="📊 Sentiment Distribution">
+              <SentimentBarChart clusters={filteredClusters} />
+            </CardWrapper>
+
+            <CardWrapper title="🥧 FAQ Match Quality">
+              <CoveragePieChart clusters={filteredClusters} />
+            </CardWrapper>
+
+            <CardWrapper title="📊 Resolution Score Distribution">
+              <ResolutionScoreBarChart clusters={filteredClusters} />
+            </CardWrapper>
+
+            <CardWrapper title="📈 Avg. Resolution Score Over Time">
+              <ResolutionTimelineChart clusters={filteredClusters} />
+            </CardWrapper>
           </div>
 
-          <TopGapsByTopicChart clusters={filteredClusters} />
-          <FAQImprovementPanel suggestions={faqSuggestions} />
+          <CardWrapper title="🔍 Top FAQ Gaps by Topic">
+            <TopGapsByTopicChart clusters={filteredClusters} />
+          </CardWrapper>
 
-          <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
+          <CardWrapper title="🛠️ FAQ Improvement Suggestions">
+            <FAQImprovementPanel suggestions={faqSuggestions} />
+          </CardWrapper>
 
-          <ClusterFrequencyChart data={getSimulatedTimeline(filteredClusters)} />
-          <ClusterTable clusters={filteredClusters} onReview={handleOpenModal} />
+          <CardWrapper title="🗺️ UMAP Cluster Map">
+            <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
+          </CardWrapper>
+
+          <CardWrapper title="📅 Cluster Frequency Timeline">
+            <ClusterFrequencyChart data={getSimulatedTimeline(filteredClusters)} />
+          </CardWrapper>
+
+          <CardWrapper title="📋 All Clusters">
+            <ClusterTable clusters={filteredClusters} onReview={handleOpenModal} />
+          </CardWrapper>
         </>
       )}
 
