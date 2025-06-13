@@ -132,46 +132,64 @@ def dashboard_clusters_with_messages(request):
 @permission_classes([IsAuthenticated])
 def trending_questions_leaderboard(request):
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
-    today = now()
+    today = now().date()
+    start_date = today - timedelta(days=14)
+
+    # Fetch messages from the past 2 weeks
+    messages = Message.objects.filter(created_at__date__gte=start_date, embedding__isnull=False)
+
+    # Bucket messages by date
+    messages_by_date = collections.defaultdict(list)
+    for msg in messages:
+        date = msg.created_at.date()
+        messages_by_date[date].append(msg)
+
+    # Extract keywords per day
+    keyword_trends = collections.defaultdict(lambda: collections.Counter())
+    sentiment_by_keyword = collections.defaultdict(lambda: collections.Counter())
+    keyword_message_map = collections.defaultdict(list)
+
+    for date, msgs in messages_by_date.items():
+        try:
+            keywords = gpt.extract_gpt_keywords(msgs)
+            for kw in keywords:
+                keyword_trends[kw][date] += 1
+                for msg in msgs:
+                    if re.search(rf"\b{re.escape(kw)}\b", msg.text, re.IGNORECASE):
+                        keyword_message_map[kw].append(msg.text)
+                        if msg.sentiment:
+                            sentiment_by_keyword[kw][msg.sentiment] += 1
+        except Exception:
+            continue
+
+    # Build leaderboard
+    today = now().date()
     last_week = today - timedelta(days=7)
-    previous_week = last_week - timedelta(days=7)
-
-    messages_last_week = Message.objects.filter(created_at__gte=last_week, created_at__lt=today)
-    messages_prev_week = Message.objects.filter(created_at__gte=previous_week, created_at__lt=last_week)
-
-    keywords_last = gpt.extract_gpt_keywords(messages_last_week, label="last week")
-    keywords_prev = gpt.extract_gpt_keywords(messages_prev_week, label="previous week")
-
-    keyword_counts = collections.Counter()
-    sentiment_map = {}
-
-    for keyword in keywords_last:
-        keyword_pattern = re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
-        matching = [m for m in messages_last_week if keyword_pattern.search(m.text)]
-        keyword_counts[keyword] = len(matching)
-        if matching:
-            sentiments = [m.sentiment for m in matching if m.sentiment]
-            sentiment_score = sentiments.count("Positive") - sentiments.count("Negative")
-            sentiment_map[keyword] = {
-                "positive": sentiments.count("Positive"),
-                "neutral": sentiments.count("Neutral"),
-                "negative": sentiments.count("Negative"),
-                "score": sentiment_score
-            }
 
     leaderboard = []
-    for keyword in keywords_last:
-        count = keyword_counts.get(keyword, 0)
-        prev_count = sum(1 for m in messages_prev_week if re.search(rf"\b{re.escape(keyword)}\b", m.text, re.IGNORECASE))
-        change = count - prev_count
+    for kw, counts in keyword_trends.items():
+        this_week_count = sum(cnt for d, cnt in counts.items() if d >= last_week)
+        prev_week_count = sum(cnt for d, cnt in counts.items() if start_date <= d < last_week)
+
+        trend = [{"date": str(d), "value": counts[d]} for d in sorted(counts.keys())]
+        sentiment_counts = sentiment_by_keyword[kw]
+        sentiment_score = sentiment_counts["Positive"] - sentiment_counts["Negative"]
+
         leaderboard.append({
-            "keyword": keyword,
-            "count": count,
-            "previous_count": prev_count,
-            "change": change,
-            "sentiment": sentiment_map.get(keyword, {}),
+            "keyword": kw,
+            "count": this_week_count,
+            "previous_count": prev_week_count,
+            "change": this_week_count - prev_week_count,
+            "trend": trend,
+            "sentiment": {
+                "positive": sentiment_counts["Positive"],
+                "neutral": sentiment_counts["Neutral"],
+                "negative": sentiment_counts["Negative"],
+                "score": sentiment_score
+            },
+            "messages": keyword_message_map[kw][:10]  # optionally include sample messages
         })
 
-    leaderboard.sort(key=lambda x: x["count"], reverse=True)
-
+    leaderboard = sorted(leaderboard, key=lambda x: x["count"], reverse=True)[:20]
     return Response({"leaderboard": leaderboard})
+
