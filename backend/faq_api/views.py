@@ -187,9 +187,59 @@ def trending_questions_leaderboard(request):
                 "negative": sentiment_counts["Negative"],
                 "score": sentiment_score
             },
-            "messages": keyword_message_map[kw][:10]  # optionally include sample messages
+            "messages": keyword_message_map[kw][:10]   
         })
 
     leaderboard = sorted(leaderboard, key=lambda x: x["count"], reverse=True)[:20]
     return Response({"leaderboard": leaderboard})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def faq_performance_trends(request):
+    """
+    Returns weekly resolution score and deflection metrics for each FAQ over time.
+    """
+    today = now().date()
+    weeks_back = 6
+    start_date = today - timedelta(weeks=weeks_back * 7)
+
+    faqs = FAQ.objects.all()
+    faq_data = {faq.id: {"question": faq.question, "trend": []} for faq in faqs}
+
+    # Iterate weekly
+    for i in range(weeks_back):
+        week_start = today - timedelta(days=(i + 1) * 7)
+        week_end = today - timedelta(days=i * 7)
+
+        matched = Message.objects.filter(
+            matched_faq__isnull=False,
+            created_at__date__gte=week_start,
+            created_at__date__lt=week_end
+        )
+
+        scores_by_faq = collections.defaultdict(list)
+        total_by_faq = collections.Counter()
+
+        for msg in matched:
+            faq_id = msg.matched_faq_id
+            if faq_id:
+                total_by_faq[faq_id] += 1
+                if msg.gpt_score:
+                    scores_by_faq[faq_id].append(msg.gpt_score)
+
+        for faq_id in faq_data.keys():
+            count = total_by_faq.get(faq_id, 0)
+            avg_score = round(sum(scores_by_faq[faq_id]) / len(scores_by_faq[faq_id]), 2) if scores_by_faq[faq_id] else None
+
+            faq_data[faq_id]["trend"].append({
+                "week": f"{week_start.isoformat()} to {week_end.isoformat()}",
+                "deflection_count": count,
+                "avg_resolution_score": avg_score
+            })
+
+    # Sort by most recent deflection count
+    sorted_faqs = sorted(faq_data.values(), key=lambda x: sum(d["deflection_count"] for d in x["trend"]), reverse=True)
+
+    return Response({"faq_performance": sorted_faqs})
+
 
