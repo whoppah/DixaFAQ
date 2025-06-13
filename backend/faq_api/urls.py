@@ -16,6 +16,7 @@ urlpatterns = [
     path("dashboard-clusters-with-messages/", views.dashboard_clusters_with_messages),
     path("api/faq/trending-leaderboard/", views.trending_questions_leaderboard),  
     path("api/faq/deflection-metrics/", views.faq_performance_trends),
+    path("faq/top-process-gaps/", views.top_process_gaps),
     path("api/trigger-pipeline/", views.trigger_pipeline),
     path("api/current-user-info/", views.current_user_info),
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
