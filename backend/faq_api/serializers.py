@@ -1,20 +1,64 @@
 #backend/faq_api/serializers.py
 from rest_framework import serializers
+from faq_api.models import Message, FAQ, ClusterRun, ClusterResult
 
-class ClusterResultSerializer(serializers.Serializer):
-    cluster_id = serializers.IntegerField()
-    message_count = serializers.IntegerField()
-    top_message = serializers.CharField()
-    matched_faq = serializers.CharField()
-    similarity = serializers.FloatField()
-    gpt_evaluation = serializers.CharField()
-    sentiment = serializers.CharField()
-    keywords = serializers.ListField(child=serializers.CharField())
-    summary = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    coverage = serializers.CharField()
-    resolution_score = serializers.IntegerField()
-    resolution_reason = serializers.CharField()
-    faq_suggestion = serializers.DictField(child=serializers.CharField())
-    topic_label = serializers.CharField()
 
+class FAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAQ
+        fields = ["id", "question", "answer"]
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    matched_faq = FAQSerializer(read_only=True)
+
+    class Meta:
+        model = Message
+        fields = [
+            "message_id",
+            "text",
+            "author_name",
+            "channel",
+            "embedding",
+            "created_at",
+            "sentiment",
+            "gpt_label",
+            "gpt_score",
+            "gpt_reason",
+            "matched_faq"
+        ]
+
+
+class ClusterRunSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClusterRun
+        fields = ["id", "created_at", "notes", "cluster_map"]
+
+
+class ClusterResultSerializer(serializers.ModelSerializer):
+    matched_faq = FAQSerializer(read_only=True)
+    run = ClusterRunSerializer(read_only=True)
+    # Optional: include messages in this cluster
+    messages = MessageSerializer(many=True, read_only=True, source="run.clusters")
+
+    class Meta:
+        model = ClusterResult
+        fields = [
+            "cluster_id",
+            "run",
+            "message_count",
+            "top_message",
+            "matched_faq",
+            "similarity",
+            "gpt_evaluation",
+            "sentiment",
+            "keywords",
+            "summary",
+            "created_at",
+            "coverage",
+            "resolution_score",
+            "resolution_reason",
+            "faq_suggestion",
+            "topic_label",
+            "messages"   
+        ]
