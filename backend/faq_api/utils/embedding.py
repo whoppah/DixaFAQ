@@ -3,9 +3,12 @@ import os
 import openai
 import json
 import tiktoken
+from faq_api.models import FAQ
+
 
 class Tokenizer:
-    def __init__(self, messages_path, openai_api_key,model="text-embedding-3-small",max_tokens=256,tokenizer=tiktoken.get_encoding("cl100k_base"), output_path=None):
+    def __init__(self, messages_path, openai_api_key, model="text-embedding-3-small",
+                 max_tokens=256, tokenizer=tiktoken.get_encoding("cl100k_base"), output_path=None):
         self.messages_path = messages_path
         self.openai_api_key = openai_api_key
         self.tokenizer = tokenizer
@@ -18,7 +21,7 @@ class Tokenizer:
         try:
             response = openai.embeddings.create(
                 input="Hello, world!",
-                model= self.model
+                model=self.model
             )
             print("Embedding retrieved:", response.data[0].embedding[:5])
         except Exception as e:
@@ -70,3 +73,44 @@ class Tokenizer:
                 print(f"❌ Failed to save embeddings: {e}")
 
         return embeddings
+
+    def embed_and_store_faqs(self, faq_items):
+        """
+        Takes a list of {"question": ..., "answer": ...} dicts and stores them with embeddings.
+        """
+        if not isinstance(faq_items, list):
+            raise ValueError("Expected a list of FAQ dictionaries.")
+
+        embedded_count = 0
+        failed = []
+
+        for i, faq in enumerate(faq_items, 1):
+            question = faq.get("question", "").strip()
+            answer = faq.get("answer", "").strip()
+
+            if not question or not answer:
+                print(f"⚠️ Skipping FAQ #{i} due to missing text")
+                continue
+
+            try:
+                response = openai.embeddings.create(
+                    input=question,
+                    model=self.model
+                )
+                embedding = response.data[0].embedding
+
+                FAQ.objects.update_or_create(
+                    question=question,
+                    defaults={"answer": answer, "embedding": embedding}
+                )
+                embedded_count += 1
+                print(f"✅ Embedded FAQ #{i}: {question[:60]}")
+
+            except Exception as e:
+                print(f"❌ Error embedding FAQ #{i}: {e}")
+                failed.append({"question": question, "error": str(e)})
+
+        print(f"\n✅ Finished embedding. Total saved: {embedded_count}")
+        if failed:
+            print(f"❌ Failed: {len(failed)}")
+        return embedded_count, failed
