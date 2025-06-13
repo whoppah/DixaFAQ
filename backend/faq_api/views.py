@@ -243,3 +243,50 @@ def faq_performance_trends(request):
     return Response({"faq_performance": sorted_faqs})
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def top_process_gaps(request):
+    gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
+
+    # Filter clusters where FAQ was NOT covered and a suggestion exists
+    clusters = ClusterResult.objects.filter(
+        coverage="Not",
+        faq_suggestion__isnull=False
+    ).select_related("matched_faq")[:100]  # limit for performance
+
+    # Prepare raw suggestions
+    suggestion_texts = [c.faq_suggestion["question"] for c in clusters if c.faq_suggestion.get("question")]
+
+    # Ask GPT to group them into thematic labels
+    prompt = f"""
+You are a support documentation assistant.
+
+Given the following user questions, group them into 5–10 top-level topics and list common phrasings.
+
+Return JSON like:
+[
+  {{
+    "topic": "Account Access",
+    "examples": ["How do I reset my password?", "Can't log in", ...],
+    "count": 8
+  }},
+  ...
+]
+
+Questions:
+{json.dumps(suggestion_texts[:50])}
+"""
+
+    try:
+        response = openai.ChatCompletion.create(
+            model=gpt.model,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        content = response['choices'][0]['message']['content']
+        result = json.loads(content)
+        return Response({"process_gaps": result})
+    except Exception as e:
+        return Response({"error": "GPT failed", "details": str(e)}, status=500)
+
+
+
