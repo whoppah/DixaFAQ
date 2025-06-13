@@ -80,20 +80,58 @@ Respond in JSON:
         except Exception:
             return {"question": "", "answer": ""}
     def label_topic(self, messages):
-        text = "\n".join([msg["text"] for msg in messages[:5]])
-        prompt = f"""
-    You are a clustering assistant.
+            text = "\n".join([msg["text"] for msg in messages[:5]])
+            prompt = f"""
+        You are a clustering assistant.
+        
+        Given the following messages, label the topic in 2–4 descriptive words (e.g., "Shipping Delay", "Login Issue", "Refund Request").
+        
+        Messages:
+        {text}
+        
+        Respond with just the label.
+        """
+            response = openai.ChatCompletion.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response['choices'][0]['message']['content'].strip()
     
-    Given the following messages, label the topic in 2–4 descriptive words (e.g., "Shipping Delay", "Login Issue", "Refund Request").
+            def extract_gpt_keywords(self, messages, label=""):
+            """
+            Given a list of Django Message objects, use GPT to extract top 10 keyword/topics.
+            Returns a list of strings.
+            """
+            texts = [m.text for m in messages if m.text]
+            if not texts:
+                return []
+    
+            sample = "\n".join(f"- {t}" for t in texts[:50])  # limit to 50 to keep it concise
+    
+            prompt = f"""
+    You are an expert at analyzing customer support messages.
+    
+    Given the following user messages related to "{label or 'various topics'}", extract the top 10 recurring questions or topic keywords that appear across them.
+    
+    Respond ONLY as a JSON list of strings.
     
     Messages:
-    {text}
-    
-    Respond with just the label.
+    {sample}
     """
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response['choices'][0]['message']['content'].strip()
+            try:
+                response = openai.ChatCompletion.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                content = response['choices'][0]['message']['content']
+                parsed = json.loads(content)
+                if isinstance(parsed, list):
+                    return parsed
+                return []
+            except Exception as e:
+                print(f"❌ GPT keyword extraction failed: {e}")
+                return []
+
+
+    
 
