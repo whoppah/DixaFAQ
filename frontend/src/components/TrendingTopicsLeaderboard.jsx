@@ -4,7 +4,13 @@ import axios from "axios";
 import { Table, Tooltip } from "flowbite-react";
 import CardWrapper from "../components/CardWrapper";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import ClusterMessagesModal from "./ClusterMessagesModal"; 
+import ClusterMessagesModal from "./ClusterMessagesModal";
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip as RechartTooltip,
+} from "recharts";
 
 export default function TrendingTopicsLeaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -12,19 +18,18 @@ export default function TrendingTopicsLeaderboard() {
   const [selectedKeyword, setSelectedKeyword] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("/api/faq/trending-leaderboard/");
-      setLeaderboard(res.data.leaderboard || []);
-    } catch (error) {
-      console.error("Failed to load trending leaderboard", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get("/api/faq/trending-leaderboard/");
+        setLeaderboard(res.data.leaderboard || []);
+      } catch (error) {
+        console.error("Failed to load trending leaderboard", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchLeaderboard();
   }, []);
 
@@ -41,7 +46,7 @@ export default function TrendingTopicsLeaderboard() {
   };
 
   return (
-    <CardWrapper title="Trending Questions">
+    <CardWrapper title="📈 Trending Questions">
       {loading ? (
         <p className="text-gray-500">Loading trending keywords...</p>
       ) : leaderboard.length === 0 ? (
@@ -54,12 +59,14 @@ export default function TrendingTopicsLeaderboard() {
               <Table.HeadCell>Mentions</Table.HeadCell>
               <Table.HeadCell>Prev Week</Table.HeadCell>
               <Table.HeadCell>Change</Table.HeadCell>
+              <Table.HeadCell>Trend</Table.HeadCell>
               <Table.HeadCell>Sentiment</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
               {leaderboard.map((item, idx) => (
                 <Table.Row key={idx}>
-                  <Table.Cell className="font-medium text-blue-600 cursor-pointer"
+                  <Table.Cell
+                    className="font-medium text-blue-600 cursor-pointer"
                     onClick={() => {
                       setSelectedKeyword(item.keyword);
                       setShowModal(true);
@@ -67,14 +74,36 @@ export default function TrendingTopicsLeaderboard() {
                   >
                     {item.keyword}
                   </Table.Cell>
+
                   <Table.Cell>{item.count}</Table.Cell>
                   <Table.Cell>{item.previous_count}</Table.Cell>
+
                   <Table.Cell className={getChangeColor(item.change)}>
                     <div className="flex items-center gap-1">
                       {getChangeIcon(item.change)}
                       {item.change > 0 ? `+${item.change}` : item.change}
                     </div>
                   </Table.Cell>
+
+                  <Table.Cell style={{ width: 100, height: 30 }}>
+                    {item.trend && item.trend.length > 1 ? (
+                      <ResponsiveContainer width="100%" height={30}>
+                        <LineChart data={item.trend}>
+                          <RechartTooltip />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#6366f1"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
+                  </Table.Cell>
+
                   <Table.Cell>
                     <Tooltip
                       content={
@@ -99,16 +128,15 @@ export default function TrendingTopicsLeaderboard() {
         </div>
       )}
 
-      {/* Optional modal showing related messages per keyword */}
       {showModal && selectedKeyword && (
         <ClusterMessagesModal
           open={showModal}
           onClose={() => setShowModal(false)}
           cluster={{
             clusterId: selectedKeyword,
-            messages: leaderboard
-              .find((k) => k.keyword === selectedKeyword)
-              ?.messages || [],
+            messages:
+              leaderboard.find((k) => k.keyword === selectedKeyword)
+                ?.messages || [],
           }}
         />
       )}
