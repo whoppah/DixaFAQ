@@ -212,18 +212,22 @@ class ElevioFAQDownloader:
             return None
 
     def download_all_faqs(self):
-        """Main method to download all FAQs and create PDFs"""
+        """Main method to download all FAQs, create PDFs, and return text content for embedding."""
+        from datetime import datetime
+    
         print("Starting FAQ download process...")
         print(f"Current working directory: {os.getcwd()}")
         self.setup_output_directory()
+    
         articles = self.get_all_articles()
         if not articles:
             print("No articles found!")
             return []
-
+    
         created_pdfs = []
         failed_articles = []
-
+        extracted_faqs = []
+    
         for i, article in enumerate(articles, 1):
             try:
                 article_id = article.get("id", "unknown")
@@ -231,29 +235,53 @@ class ElevioFAQDownloader:
                 if not isinstance(article_title, str):
                     article_title = str(article_title) if article_title is not None else "Unknown"
                 print(f"Processing article {i}/{len(articles)}: {article_title}")
+    
                 detailed_article = self.get_article_details(article_id)
-                if detailed_article:
-                    pdf_path = self.create_pdf(detailed_article)
-                    if pdf_path:
-                        created_pdfs.append(pdf_path)
-                    else:
-                        failed_articles.append(article_id)
-                else:
+                if not detailed_article:
                     failed_articles.append(article_id)
                     print(f"  -> Failed to get details for article {article_id}")
+                    continue
+    
+                # Create PDF
+                pdf_path = self.create_pdf(detailed_article)
+                if pdf_path:
+                    created_pdfs.append(pdf_path)
+                else:
+                    failed_articles.append(article_id)
+    
+                # Extract question/answer
+                translation = next(
+                    (t for t in detailed_article.get("translations", []) if t.get("language_id") == "en"),
+                    None
+                )
+                if not translation:
+                    continue
+    
+                question = translation.get("title", "").strip()
+                body_html = translation.get("body", "")
+                answer = self.clean_text(body_html)
+    
+                if question and answer:
+                    extracted_faqs.append({
+                        "question": question,
+                        "answer": answer
+                    })
+    
             except Exception as e:
                 article_id = article.get("id", "unknown")
                 failed_articles.append(article_id)
                 print(f"  -> Error processing article {article_id}: {e}")
                 continue
-
+    
+        # Summary reporting
         print(f"\n{'=' * 50}")
-        print(f"SUMMARY:")
+        print("SUMMARY:")
         print(f"Total articles processed: {len(articles)}")
         print(f"PDFs created successfully: {len(created_pdfs)}")
+        print(f"FAQs extracted for embedding: {len(extracted_faqs)}")
         print(f"Failed articles: {len(failed_articles)}")
         print(f"Output directory: {os.path.abspath(self.output_dir)}")
-
+    
         if os.path.exists(self.output_dir):
             actual_files = [f for f in os.listdir(self.output_dir) if f.endswith(".pdf")]
             print(f"Actual PDF files in directory: {len(actual_files)}")
@@ -263,21 +291,14 @@ class ElevioFAQDownloader:
                     file_path = os.path.join(self.output_dir, f)
                     file_size = os.path.getsize(file_path)
                     print(f"  - {f} ({file_size} bytes)")
-
+    
         if failed_articles:
             print(f"Failed article IDs: {failed_articles[:10]}...")
+    
+        # Save extracted data to JSON for offline embedding
+        summary_file = os.path.join(self.output_dir, "elevio_faq_text.json")
+        with open(summary_file, "w", encoding="utf-8") as f:
+            json.dump(extracted_faqs, f, indent=2, ensure_ascii=False)
+    
+        return extracted_faqs
 
-        summary_file = os.path.join(self.output_dir, "download_summary.txt")
-        with open(summary_file, "w") as f:
-            f.write(f"FAQ Download Summary\n")
-            f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"Total articles processed: {len(articles)}\n")
-            f.write(f"PDFs created: {len(created_pdfs)}\n")
-            f.write(f"Failed articles: {len(failed_articles)}\n\n")
-            if failed_articles:
-                f.write(f"Failed article IDs: {', '.join(map(str, failed_articles))}\n\n")
-            f.write("Successfully created files:\n")
-            for pdf in created_pdfs:
-                f.write(f"- {os.path.basename(pdf)}\n")
-
-        return created_pdfs
