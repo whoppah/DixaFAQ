@@ -110,7 +110,9 @@ export default function ClusterDashboard() {
       answer: c.faq_suggestion.answer,
       reason: c.resolution_reason,
       coverage: c.coverage,
-      matchedFaq: c.matched_faq,
+      matched_faq: c.matched_faq,
+      resolution_score: c.resolution_score,
+      faq_suggestion: c.faq_suggestion
     }));
 
   const getSimulatedTimeline = (clusters) =>
