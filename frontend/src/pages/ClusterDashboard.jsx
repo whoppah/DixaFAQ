@@ -17,6 +17,8 @@ import FAQImprovementPanel from "../components/FAQImprovementPanel";
 import TopGapsByTopicChart from "../components/TopGapsByTopicChart";
 import TriggerPipelineButton from "../components/TriggerPipelineButton";
 import TrendingTopicsLeaderboard from "../components/TrendingTopicsLeaderboard";
+import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
+
 
 axios.defaults.withCredentials = true;
 
@@ -53,9 +55,21 @@ export default function ClusterDashboard() {
     }
   };
 
+  const [processGaps, setProcessGaps] = useState([]);
+
+  const fetchProcessGaps = async () => {
+    try {
+      const res = await axios.get("/api/faq/top-process-gaps/");
+      setProcessGaps(res.data.process_gaps || []);
+    } catch (e) {
+      console.error("Failed to fetch process gaps", e);
+    }
+  };
+  
   useEffect(() => {
     fetchUser();
     refreshData();
+    fetchProcessGaps();   
   }, []);
 
   const handleOpenModal = (cluster) => {
@@ -111,6 +125,12 @@ export default function ClusterDashboard() {
           <CardWrapper title="FAQ Deflection Performance">
             <FAQDeflectionTrends />
           </CardWrapper>
+
+          {/* Top Process Gaps Panel */}
+          <CardWrapper title="Top Process Gaps">
+            <TopProcessGapsPanel data={processGaps} />
+          </CardWrapper>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CardWrapper title="Sentiment Distribution">
