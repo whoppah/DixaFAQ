@@ -12,11 +12,11 @@ export default function FAQMatchModal({ open, onClose, cluster }) {
         <div className="space-y-4 text-sm text-gray-800">
           <div>
             <strong className="text-gray-600">Top Message:</strong>
-            <p>{cluster.topMessage}</p>
+            <p>{cluster.top_message}</p>
           </div>
           <div>
             <strong className="text-gray-600">Matched FAQ:</strong>
-            <p>{cluster.matchedFaq}</p>
+            <p>{cluster.matched_faq}</p>
           </div>
           <div>
             <strong className="text-gray-600">Similarity Score:</strong>
@@ -24,7 +24,7 @@ export default function FAQMatchModal({ open, onClose, cluster }) {
           </div>
           <div className="p-4 bg-gray-100 border rounded-md">
             <strong className="block mb-1 text-gray-700">GPT Evaluation:</strong>
-            <p>{cluster.gptEvaluation}</p>
+            <p>{cluster.gpt_evaluation}</p>
           </div>
         </div>
       </Modal.Body>
