@@ -3,7 +3,7 @@ import os
 import openai
 import json
 import tiktoken
-from faq_api.models import FAQ
+from faq_api.models import FAQ, Message
 
 
 class Tokenizer:
@@ -42,7 +42,9 @@ class Tokenizer:
         embeddings = []
         for msg in messages:
             text = msg.get("text", "")
-            if not isinstance(text, str) or not text.strip():
+            msg_id = msg.get("id", None)
+
+            if not isinstance(text, str) or not text.strip() or not msg_id:
                 continue
 
             clean_text = self.truncate_text(text)
@@ -53,15 +55,23 @@ class Tokenizer:
                 )
                 embedding_data = response.data
                 if embedding_data:
+                    embedding = embedding_data[0].embedding
                     embeddings.append({
-                        "id": msg.get("id", None),
-                        "embedding": embedding_data[0].embedding,
+                        "id": msg_id,
+                        "embedding": embedding,
                         "text": clean_text
                     })
+
+                    # ✅ Save to Message model
+                    updated = Message.objects.filter(message_id=msg_id).update(embedding=embedding)
+                    if updated:
+                        print(f"✅ Stored embedding for message ID: {msg_id}")
+                    else:
+                        print(f"⚠️ No matching Message record for ID: {msg_id}")
                 else:
-                    print(f"No embedding returned for message ID: {msg.get('id')}")
+                    print(f"No embedding returned for message ID: {msg_id}")
             except Exception as e:
-                print(f"Error embedding message ID {msg.get('id')}: {e}")
+                print(f"Error embedding message ID {msg_id}: {e}")
                 continue
 
         if self.output_path:
