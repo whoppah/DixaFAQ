@@ -16,6 +16,7 @@ import ResolutionTimelineChart from "../components/ResolutionTimelineChart";
 import FAQImprovementPanel from "../components/FAQImprovementPanel";
 import TopGapsByTopicChart from "../components/TopGapsByTopicChart";
 import TriggerPipelineButton from "../components/TriggerPipelineButton";
+import FAQDeflectionTrends from "../components/FAQDeflectionTrends";
 import TrendingTopicsLeaderboard from "../components/TrendingTopicsLeaderboard";
 import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
 
