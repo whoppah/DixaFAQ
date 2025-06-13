@@ -10,7 +10,7 @@ from html import unescape
 class MessagePreprocessor:
     def __init__(self):
         # Load English and Dutch spaCy models
-        self.nlp_models = {
+        self.nlp_models = { 
             "en": spacy.load("en_core_web_sm"),
             "nl": spacy.load("nl_core_news_sm")
         }
@@ -131,25 +131,30 @@ class MessagePreprocessor:
         return anonymized
 
     def anonymize_message(self, msg):
-        msg = msg.copy()
-
+        if isinstance(msg, str):
+            print(f"⚠️ Expected dict, got string. Wrapping string in 'text' field:\n{msg}")
+            msg = {"text": msg}
+        else:
+            msg = msg.copy()
+    
         msg["text"] = self.anonymize_text(msg.get("text", ""))
-
+    
         # Conditionally anonymize author_name
         author_name = msg.get("author_name", "")
         if author_name and author_name.lower() not in ["system user", "whoppahai"]:
             msg["author_name"] = "[AUTHOR_NAME]"
-
+    
         # Always anonymize these fields if present
         for field in ["author_email", "from"]:
             if msg.get(field):
                 msg[field] = f"[{field.upper()}]"
-
+    
         # Anonymize lists of recipients
         for field in ["to", "cc", "bcc"]:
             msg[field] = ["[EMAIL]" for _ in msg.get(field, [])]
-
+    
         return msg
+
 
     def process_file(self, input_path, output_path):
         if not os.path.exists(input_path):
