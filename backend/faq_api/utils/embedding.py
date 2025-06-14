@@ -3,6 +3,7 @@ import os
 import openai
 import json
 import tiktoken
+from datetime import datetime
 from faq_api.models import FAQ, Message
 
 
@@ -30,6 +31,60 @@ class Tokenizer:
     def truncate_text(self, text):
         tokens = self.tokenizer.encode(text)
         return self.tokenizer.decode(tokens[:self.max_tokens]) if len(tokens) > self.max_tokens else text
+
+    def insert_messages_into_db(self):
+        print("📥 Loading and inserting messages...")
+        if not os.path.exists(self.messages_path):
+            raise FileNotFoundError(f"Input file not found: {self.messages_path}")
+
+        with open(self.messages_path, "r", encoding="utf-8") as f:
+            messages = json.load(f)
+
+        inserted = 0
+        skipped = 0
+
+        for msg in messages:
+            msg_id = msg.get("id")
+            text = msg.get("text")
+
+            if not msg_id or not text:
+                skipped += 1
+                continue
+
+            created_at_ms = msg.get("created_at")
+            created_at = datetime.fromtimestamp(created_at_ms / 1000.0) if created_at_ms else None
+
+            Message.objects.update_or_create(
+                message_id=msg_id,
+                defaults={
+                    "csid": msg.get("csid"),
+                    "created_at": created_at,
+                    "initial_channel": msg.get("initial_channel"),
+                    "author_name": msg.get("author_name"),
+                    "author_email": msg.get("author_email"),
+                    "direction": msg.get("direction"),
+                    "text": text,
+                    "from_phone_number": msg.get("from_phone_number"),
+                    "to_phone_number": msg.get("to_phone_number"),
+                    "duration": msg.get("duration"),
+                    "to": msg.get("to"),
+                    "from_field": msg.get("from"),  # Make sure your model uses `from_field`
+                    "cc": msg.get("cc"),
+                    "bcc": msg.get("bcc"),
+                    "is_automated_message": msg.get("is_automated_message"),
+                    "voicemail_url": msg.get("voicemail_url"),
+                    "recording_url": msg.get("recording_url"),
+                    "attached_files": msg.get("attached_files"),
+                    "chat_input_question": msg.get("chat_input_question"),
+                    "chat_input_answer": msg.get("chat_input_answer"),
+                    "chat_menu_text": msg.get("chat_menu_text"),
+                    "form_submission": msg.get("formSubmission"),
+                }
+            )
+            inserted += 1
+
+        print(f"✅ Inserted or updated: {inserted}")
+        print(f"⚠️ Skipped (missing ID or text): {skipped}")
 
     def embed_all(self):
         print("Starting to get the embeddings...")
@@ -62,7 +117,6 @@ class Tokenizer:
                         "text": clean_text
                     })
 
-                    # ✅ Save to Message model
                     updated = Message.objects.filter(message_id=msg_id).update(embedding=embedding)
                     if updated:
                         print(f"✅ Stored embedding for message ID: {msg_id}")
@@ -85,9 +139,6 @@ class Tokenizer:
         return embeddings
 
     def embed_and_store_faqs(self, faq_items):
-        """
-        Takes a list of {"question": ..., "answer": ...} dicts and stores them with embeddings.
-        """
         if not isinstance(faq_items, list):
             raise ValueError("Expected a list of FAQ dictionaries.")
 
