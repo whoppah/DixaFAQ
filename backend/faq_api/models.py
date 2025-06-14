@@ -11,14 +11,38 @@ class FAQ(models.Model):
     def __str__(self):
         return self.question[:80]
 
-
+ 
 class Message(models.Model):
     message_id = models.CharField(max_length=100, unique=True)
     text = models.TextField()
     author_name = models.CharField(max_length=100, null=True, blank=True)
+    author_email = models.EmailField(null=True, blank=True)
     channel = models.CharField(max_length=50, null=True, blank=True)
-    embedding = ArrayField(models.FloatField(), null=True, blank=True)
+    direction = models.CharField(max_length=50, null=True, blank=True)
+
+    csid = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
+
+    from_phone_number = models.CharField(max_length=50, null=True, blank=True)
+    to_phone_number = models.CharField(max_length=50, null=True, blank=True)
+    duration = models.IntegerField(null=True, blank=True)
+
+    to = ArrayField(models.CharField(max_length=100), null=True, blank=True)
+    from_field = models.CharField(max_length=100, null=True, blank=True)
+    cc = ArrayField(models.CharField(max_length=100), null=True, blank=True)
+    bcc = ArrayField(models.CharField(max_length=100), null=True, blank=True)
+
+    is_automated_message = models.BooleanField(null=True, blank=True)
+    voicemail_url = models.URLField(null=True, blank=True)
+    recording_url = models.URLField(null=True, blank=True)
+    attached_files = models.JSONField(null=True, blank=True)
+
+    chat_input_question = models.TextField(null=True, blank=True)
+    chat_input_answer = models.TextField(null=True, blank=True)
+    chat_menu_text = models.TextField(null=True, blank=True)
+    form_submission = models.JSONField(null=True, blank=True)
+
+    embedding = ArrayField(models.FloatField(), null=True, blank=True)
 
     sentiment = models.CharField(max_length=20, null=True, blank=True)
     gpt_score = models.IntegerField(null=True, blank=True)
@@ -31,6 +55,7 @@ class Message(models.Model):
 
     def __str__(self):
         return self.message_id
+
 
 
 class ClusterRun(models.Model):
