@@ -82,6 +82,8 @@ def async_download_and_process():
         gpt = GPTFAQAnalyzer(openai_api_key=openai_key)
         sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
 
+        # Dixa download
+        print("📥 Downloading Dixa messages...")
         dixa = DixaDownloader(
             api_token=dixa_token,
             start_date=datetime.datetime(2025, 5, 1),
@@ -92,12 +94,18 @@ def async_download_and_process():
         with open(dixa_output, "w", encoding="utf-8") as f:
             json.dump({"messages": all_messages}, f, indent=2)
         summary["dixa_message_count"] = len(all_messages)
+        print(f"✅ Dixa messages saved: {len(all_messages)}")
 
-        elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
-        faq_items = elevio.download_all_faqs()
-        tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
-        tokenizer.embed_and_store_faqs(faq_items)
+        # Elevio download
+        try:
+            elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
+            faq_items = elevio.download_all_faqs()
+            tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
+            tokenizer.embed_and_store_faqs(faq_items)
+        except Exception as e:
+            print(f"⚠️ Failed to fetch/embed Elevio FAQs: {e}")
 
+        # Clean + embed
         cleaned_path = "/tmp/cleaned.json"
         processor = MessagePreprocessor()
         processor.process_file(dixa_output, cleaned_path)
@@ -108,11 +116,13 @@ def async_download_and_process():
             openai_api_key=openai_key,
             output_path=embeddings_path
         )
+
         dixa_embeddings = tokenizer.embed_all()
-
-        if not dixa_embeddings:
+        if not dixa_embeddings or len(dixa_embeddings) == 0:
             raise Exception("❌ No embeddings generated. Aborting clustering.")
+        print(f"✅ Embeddings generated: {len(dixa_embeddings)}")
 
+        # Process and store messages
         saved_count = 0
         for item in dixa_embeddings:
             msg_id = item.get("id")
@@ -120,6 +130,7 @@ def async_download_and_process():
             embedding = item.get("embedding")
 
             if not msg_id or not text or not embedding:
+                print(f"⚠️ Skipping invalid embedded item: {msg_id}")
                 continue
 
             sentiment = sentiment_analyzer.analyze(text)
@@ -129,7 +140,7 @@ def async_download_and_process():
                 matched_faq = rerank_with_gpt(text, top_faqs, openai_api_key=openai_key)
                 gpt_eval = gpt.score_resolution(text, matched_faq.answer)
             except Exception as e:
-                print(f"⚠️ Matching/Scoring failed for {msg_id}: {e}")
+                print(f"⚠️ Matching or scoring failed for {msg_id}: {e}")
                 matched_faq = None
                 gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
@@ -174,7 +185,9 @@ def async_download_and_process():
             saved_count += 1
 
         summary["embedding_saved"] = saved_count
+        print(f"✅ Messages updated with embeddings: {saved_count}")
 
+        # Upload output files
         for local_path, gcs_name in [
             (dixa_output, f"{gcs_prefix}/dixa_messages.json"),
             (cleaned_path, f"{gcs_prefix}/cleaned.json"),
@@ -185,13 +198,17 @@ def async_download_and_process():
                 f"gs://{gcs_bucket}/{gcs_name}" if not uploaded.startswith("FAILED") else uploaded
             )
 
+        # Clustering + GPT
         print("🧠 Running clustering + GPT analysis...")
-        process_clusters_and_save()
+        try:
+            process_clusters_and_save()
+        except Exception as e:
+            print(f"⚠️ Clustering failed: {e}")
 
         print("✅ Pipeline completed")
         print("📊 Summary:", json.dumps(summary, indent=2))
         return summary
 
     except Exception as e:
-        print(f"❌ Error in pipeline: {e}")
+        print(f"❌ Fatal error in pipeline: {e}")
         raise
