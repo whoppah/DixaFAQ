@@ -212,109 +212,109 @@ class ElevioFAQDownloader:
             return None
 
     def download_all_faqs(self):
-    """Main method to download all FAQs, create PDFs, and return text content for embedding."""
-    from datetime import datetime
-
-    print("🚀 Starting FAQ download process...")
-    print(f"📂 Current working directory: {os.getcwd()}")
-    self.setup_output_directory()
-
-    articles = self.get_all_articles()
-    if not articles:
-        print("❌ No articles found!")
-        return []
-
-    print(f"🧾 Total articles fetched: {len(articles)}")
-    for a in articles[:5]:
-        print(f"  - Article title: {a.get('title', 'N/A')}")
-
-    created_pdfs = []
-    failed_articles = []
-    extracted_faqs = []
-
-    for i, article in enumerate(articles, 1):
+        """Main method to download all FAQs, create PDFs, and return text content for embedding."""
+        from datetime import datetime
+    
+        print("🚀 Starting FAQ download process...")
+        print(f"📂 Current working directory: {os.getcwd()}")
+        self.setup_output_directory()
+    
+        articles = self.get_all_articles()
+        if not articles:
+            print("❌ No articles found!")
+            return []
+    
+        print(f"🧾 Total articles fetched: {len(articles)}")
+        for a in articles[:5]:
+            print(f"  - Article title: {a.get('title', 'N/A')}")
+    
+        created_pdfs = []
+        failed_articles = []
+        extracted_faqs = []
+    
+        for i, article in enumerate(articles, 1):
+            try:
+                article_id = article.get("id", "unknown")
+                article_title = article.get("title", "Unknown")
+                if not isinstance(article_title, str):
+                    article_title = str(article_title) if article_title is not None else "Unknown"
+                print(f"\n🔄 Processing article {i}/{len(articles)}: {article_title}")
+    
+                detailed_article = self.get_article_details(article_id)
+                if not detailed_article:
+                    failed_articles.append(article_id)
+                    print(f"  ⚠️ Failed to get details for article {article_id}")
+                    continue
+    
+                # Create PDF
+                pdf_path = self.create_pdf(detailed_article)
+                if pdf_path:
+                    created_pdfs.append(pdf_path)
+                else:
+                    failed_articles.append(article_id)
+    
+                # Extract question/answer
+                translation = next(
+                    (t for t in detailed_article.get("translations", []) if t.get("language_id") == "en"),
+                    None
+                )
+                if not translation:
+                    print(f"  ⚠️ No English translation for article {article_id}")
+                    continue
+    
+                question = translation.get("title", "").strip()
+                body_html = translation.get("body", "")
+                answer = self.clean_text(body_html)
+    
+                if not question:
+                    print(f"  ⚠️ Missing question for article {article_id}")
+                if not answer:
+                    print(f"  ⚠️ Missing answer for article {article_id}")
+    
+                if question and answer:
+                    extracted_faqs.append({
+                        "question": question,
+                        "answer": answer
+                    })
+                    print(f"  ✅ FAQ extracted: Q: {question[:50]} | A: {answer[:60]}")
+                else:
+                    print(f"  ⚠️ Skipped article {article_id} due to incomplete FAQ")
+    
+            except Exception as e:
+                article_id = article.get("id", "unknown")
+                failed_articles.append(article_id)
+                print(f"  ❌ Error processing article {article_id}: {e}")
+                continue
+    
+        # Summary reporting
+        print(f"\n{'=' * 50}")
+        print("📊 SUMMARY:")
+        print(f"📝 Articles processed: {len(articles)}")
+        print(f"📄 PDFs created: {len(created_pdfs)}")
+        print(f"💬 FAQs extracted: {len(extracted_faqs)}")
+        print(f"❌ Failed articles: {len(failed_articles)}")
+        print(f"📁 Output directory: {os.path.abspath(self.output_dir)}")
+    
+        if os.path.exists(self.output_dir):
+            actual_files = [f for f in os.listdir(self.output_dir) if f.endswith(".pdf")]
+            print(f"📚 PDF files in directory: {len(actual_files)}")
+            for f in actual_files[:5]:
+                file_path = os.path.join(self.output_dir, f)
+                size = os.path.getsize(file_path)
+                print(f"  - {f} ({size} bytes)")
+    
+        if failed_articles:
+            print(f"🧨 Failed article IDs (first 10): {failed_articles[:10]}")
+    
+        # Save extracted data to JSON for offline embedding
+        summary_file = os.path.join(self.output_dir, "elevio_faq_text.json")
         try:
-            article_id = article.get("id", "unknown")
-            article_title = article.get("title", "Unknown")
-            if not isinstance(article_title, str):
-                article_title = str(article_title) if article_title is not None else "Unknown"
-            print(f"\n🔄 Processing article {i}/{len(articles)}: {article_title}")
-
-            detailed_article = self.get_article_details(article_id)
-            if not detailed_article:
-                failed_articles.append(article_id)
-                print(f"  ⚠️ Failed to get details for article {article_id}")
-                continue
-
-            # Create PDF
-            pdf_path = self.create_pdf(detailed_article)
-            if pdf_path:
-                created_pdfs.append(pdf_path)
-            else:
-                failed_articles.append(article_id)
-
-            # Extract question/answer
-            translation = next(
-                (t for t in detailed_article.get("translations", []) if t.get("language_id") == "en"),
-                None
-            )
-            if not translation:
-                print(f"  ⚠️ No English translation for article {article_id}")
-                continue
-
-            question = translation.get("title", "").strip()
-            body_html = translation.get("body", "")
-            answer = self.clean_text(body_html)
-
-            if not question:
-                print(f"  ⚠️ Missing question for article {article_id}")
-            if not answer:
-                print(f"  ⚠️ Missing answer for article {article_id}")
-
-            if question and answer:
-                extracted_faqs.append({
-                    "question": question,
-                    "answer": answer
-                })
-                print(f"  ✅ FAQ extracted: Q: {question[:50]} | A: {answer[:60]}")
-            else:
-                print(f"  ⚠️ Skipped article {article_id} due to incomplete FAQ")
-
+            with open(summary_file, "w", encoding="utf-8") as f:
+                json.dump(extracted_faqs, f, indent=2, ensure_ascii=False)
+            print(f"✅ FAQ JSON saved: {summary_file} ({len(extracted_faqs)} entries)")
         except Exception as e:
-            article_id = article.get("id", "unknown")
-            failed_articles.append(article_id)
-            print(f"  ❌ Error processing article {article_id}: {e}")
-            continue
-
-    # Summary reporting
-    print(f"\n{'=' * 50}")
-    print("📊 SUMMARY:")
-    print(f"📝 Articles processed: {len(articles)}")
-    print(f"📄 PDFs created: {len(created_pdfs)}")
-    print(f"💬 FAQs extracted: {len(extracted_faqs)}")
-    print(f"❌ Failed articles: {len(failed_articles)}")
-    print(f"📁 Output directory: {os.path.abspath(self.output_dir)}")
-
-    if os.path.exists(self.output_dir):
-        actual_files = [f for f in os.listdir(self.output_dir) if f.endswith(".pdf")]
-        print(f"📚 PDF files in directory: {len(actual_files)}")
-        for f in actual_files[:5]:
-            file_path = os.path.join(self.output_dir, f)
-            size = os.path.getsize(file_path)
-            print(f"  - {f} ({size} bytes)")
-
-    if failed_articles:
-        print(f"🧨 Failed article IDs (first 10): {failed_articles[:10]}")
-
-    # Save extracted data to JSON for offline embedding
-    summary_file = os.path.join(self.output_dir, "elevio_faq_text.json")
-    try:
-        with open(summary_file, "w", encoding="utf-8") as f:
-            json.dump(extracted_faqs, f, indent=2, ensure_ascii=False)
-        print(f"✅ FAQ JSON saved: {summary_file} ({len(extracted_faqs)} entries)")
-    except Exception as e:
-        print(f"❌ Error writing FAQ summary JSON: {e}")
-
-    return extracted_faqs
+            print(f"❌ Error writing FAQ summary JSON: {e}")
+    
+        return extracted_faqs
 
 
