@@ -50,24 +50,37 @@ def download_dixa_task():
     try:
         dixa_token = os.getenv("DIXA_API_TOKEN")
         if not dixa_token:
-            raise Exception("Missing DIXA_API_TOKEN")
+            raise Exception("❌ Missing DIXA_API_TOKEN environment variable")
 
+        print("ℹ️ Starting Dixa download process...")
+        print(f"📂 Current working directory: {os.getcwd()}")
+
+        # Initialize downloader
         dixa = DixaDownloader(
             api_token=dixa_token,
             start_date=datetime.datetime(2025, 5, 1),
             end_date=datetime.datetime.now()
         )
-        messages, _ = dixa.download_all_dixa_data()
 
+        # Download all data
+        messages, _ = dixa.download_all_dixa_data()
+        print(f"📥 Downloaded total messages: {len(messages)}")
+
+        # Save messages to temp file
         dixa_path = "/tmp/dixa_messages.json"
         with open(dixa_path, "w", encoding="utf-8") as f:
             json.dump({"messages": messages}, f, indent=2)
 
-        print(f"✅ Dixa messages saved: {len(messages)}")
+        print(f"✅ Dixa messages saved to: {dixa_path}")
+        print("✅ download_dixa_task completed successfully.")
         return {"dixa_path": dixa_path, "message_count": len(messages)}
+
     except Exception as e:
-        print(f"❌ Error in download_dixa_task: {e}")
+        print(f"❌ Exception in download_dixa_task: {e}")
+        import traceback
+        traceback.print_exc()
         raise
+
 
 
 @shared_task
