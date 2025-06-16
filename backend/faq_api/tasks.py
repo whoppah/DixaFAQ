@@ -210,7 +210,7 @@ def cluster_and_summarize_task(prev):
     print("✅ Clustering complete.")
     return {"status": "pipeline_complete", **prev}
 
-
+@shared_task(name="faq_api.tasks.start_pipeline")
 def start_pipeline():
     return chain(
         download_dixa_task.s(),
