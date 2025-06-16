@@ -14,8 +14,7 @@ app.conf.timezone = 'Europe/Amsterdam'
 # Celery Beat schedule
 app.conf.beat_schedule = {
     "weekly-download-job": {
-        "task": "download_and_process",
-        "schedule": crontab(minute=10, hour=10, day_of_week=1),  # Every Monday at 7.00 AM
-        #"options": {"expires": 9000},  #expires in 2.5 hour
+        "task": "faq_api.tasks.start_pipeline",  
+        "schedule": crontab(minute=50, hour=10, day_of_week=1),  # Every Monday at 7:00 AM
     },
 }
