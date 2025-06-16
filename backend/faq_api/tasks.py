@@ -10,7 +10,6 @@ from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
 from faq_api.utils.embedding import Tokenizer
 from faq_api.utils.sentiment import SentimentAnalyzer
-from faq_api.utils.preprocess import MessagePreprocessor
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.faq_matcher import find_top_faqs, rerank_with_gpt
 from faq_api.utils.pipeline_runner import process_clusters_and_save
@@ -52,6 +51,7 @@ def download_dixa_task():
             continue
 
         created_at = datetime.datetime.fromtimestamp(msg["created_at"] / 1000) if msg.get("created_at") else None
+
         Message.objects.update_or_create(
             message_id=msg_id,
             defaults={
@@ -105,7 +105,7 @@ def download_elevio_task(prev):
 @shared_task
 def preprocess_messages_task(prev):
     print("🧹 Task: preprocess_messages_task")
-    # Skipping file preprocessing, assume messages already in DB.
+    print("ℹ️ Skipped — using DB messages directly.")
     return prev
 
 
@@ -114,39 +114,39 @@ def embed_messages_task(prev):
     print("🧠 Task: embed_messages_task")
     openai_key = os.getenv("OPENAI_API_KEY")
     tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
-    embeddings = tokenizer.embed_all()
-    return {**prev, "embeddings": embeddings}
+    embeddings = tokenizer.embed_all()  # Also updates DB
+    return {**prev, "embedded_count": len(embeddings)}
 
 
 @shared_task
 def match_messages_task(prev):
-    print("🔍 Task: match_messages_task")
+    print("🔍 Task: match_messages_task (DB-based)")
     openai_key = os.getenv("OPENAI_API_KEY")
     gpt = GPTFAQAnalyzer(openai_api_key=openai_key)
     sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
 
     saved = 0
-    for item in prev["embeddings"]:
-        msg_id, text, embedding = item["id"], item["text"], item["embedding"]
-        if not msg_id or not text or not embedding:
-            continue
+    messages = Message.objects.filter(embedding__isnull=False)
 
+    print(f"ℹ️ Found {messages.count()} messages with embeddings in DB")
+
+    for msg in messages:
         try:
-            sentiment = sentiment_analyzer.analyze(text)
+            sentiment = sentiment_analyzer.analyze(msg.text)
         except Exception as e:
-            print(f"⚠️ Sentiment failed for {msg_id}: {e}")
+            print(f"⚠️ Sentiment failed for {msg.message_id}: {e}")
             sentiment = None
 
         try:
-            top_faqs = find_top_faqs(embedding, top_n=5)
-            matched_faq = rerank_with_gpt(text, top_faqs, openai_api_key=openai_key)
-            gpt_eval = gpt.score_resolution(text, matched_faq.answer)
+            top_faqs = find_top_faqs(msg.embedding, top_n=5)
+            matched_faq = rerank_with_gpt(msg.text, top_faqs, openai_api_key=openai_key)
+            gpt_eval = gpt.score_resolution(msg.text, matched_faq.answer)
         except Exception as e:
-            print(f"⚠️ GPT failed for {msg_id}: {e}")
+            print(f"⚠️ GPT failed for {msg.message_id}: {e}")
             matched_faq = None
             gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
-        Message.objects.filter(message_id=msg_id).update(
+        Message.objects.filter(id=msg.id).update(
             sentiment=sentiment,
             gpt_label=gpt_eval["label"],
             gpt_score=gpt_eval["score"],
@@ -155,7 +155,7 @@ def match_messages_task(prev):
         )
         saved += 1
 
-    print(f"✅ Matched {saved} messages with FAQs and sentiment")
+    print(f"✅ Matched and updated {saved} messages")
     return {**prev, "matched_messages": saved}
 
 
@@ -167,7 +167,7 @@ def upload_artifacts_task(prev):
     if not bucket:
         raise Exception("Missing GCS_BUCKET_NAME")
 
-    print("ℹ️ Skipping uploads (no local artifacts in DB mode).")
+    print("ℹ️ No artifacts to upload in DB-first pipeline.")
     return {**prev, "uploaded": "skipped"}
 
 
