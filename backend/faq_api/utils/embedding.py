@@ -4,6 +4,7 @@ import openai
 import json
 import tiktoken
 from datetime import datetime
+from bs4 import BeautifulSoup
 from faq_api.models import FAQ, Message
 
 
@@ -31,6 +32,9 @@ class Tokenizer:
     def truncate_text(self, text):
         tokens = self.tokenizer.encode(text)
         return self.tokenizer.decode(tokens[:self.max_tokens]) if len(tokens) > self.max_tokens else text
+
+    def strip_html(self, raw_html):
+        return BeautifulSoup(raw_html, "html.parser").get_text(separator=" ").strip()
 
     def insert_messages_into_db(self):
         print("📥 Loading and inserting messages...")
@@ -68,7 +72,7 @@ class Tokenizer:
                     "to_phone_number": msg.get("to_phone_number"),
                     "duration": msg.get("duration"),
                     "to": msg.get("to"),
-                    "from_field": msg.get("from"),  # Make sure your model uses `from_field`
+                    "from_field": msg.get("from"),
                     "cc": msg.get("cc"),
                     "bcc": msg.get("bcc"),
                     "is_automated_message": msg.get("is_automated_message"),
@@ -87,7 +91,7 @@ class Tokenizer:
         print(f"⚠️ Skipped (missing ID or text): {skipped}")
 
     def embed_all(self):
-        print("Starting to get the embeddings...")
+        print("🔍 Starting to get the embeddings...")
         if not os.path.exists(self.messages_path):
             raise FileNotFoundError(f"Input file not found: {self.messages_path}")
 
@@ -95,14 +99,30 @@ class Tokenizer:
             messages = json.load(f)
 
         embeddings = []
-        for msg in messages:
-            text = msg.get("text", "")
-            msg_id = msg.get("id", None)
+        skipped = 0
 
-            if not isinstance(text, str) or not text.strip() or not msg_id:
+        for msg in messages:
+            msg_id = msg.get("id")
+            raw_text = msg.get("text", "")
+
+            if not isinstance(raw_text, str) or not raw_text.strip():
+                print(f"⚠️ Skipping message ID {msg_id} – empty or non-string text")
+                skipped += 1
                 continue
 
-            clean_text = self.truncate_text(text)
+            if not msg_id:
+                print(f"⚠️ Skipping message with missing ID: {raw_text[:50]}")
+                skipped += 1
+                continue
+
+            stripped_text = self.strip_html(raw_text)
+            if not stripped_text.strip():
+                print(f"⚠️ Skipping message ID {msg_id} – text empty after HTML stripping")
+                skipped += 1
+                continue
+
+            clean_text = self.truncate_text(stripped_text)
+
             try:
                 response = openai.embeddings.create(
                     input=clean_text,
@@ -123,9 +143,9 @@ class Tokenizer:
                     else:
                         print(f"⚠️ No matching Message record for ID: {msg_id}")
                 else:
-                    print(f"No embedding returned for message ID: {msg_id}")
+                    print(f"❌ No embedding returned for message ID: {msg_id}")
             except Exception as e:
-                print(f"Error embedding message ID {msg_id}: {e}")
+                print(f"❌ Error embedding message ID {msg_id}: {e}")
                 continue
 
         if self.output_path:
@@ -136,6 +156,7 @@ class Tokenizer:
             except Exception as e:
                 print(f"❌ Failed to save embeddings: {e}")
 
+        print(f"\n✅ Finished embedding. Total: {len(embeddings)} | Skipped: {skipped}")
         return embeddings
 
     def embed_and_store_faqs(self, faq_items):
