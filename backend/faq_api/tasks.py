@@ -133,6 +133,10 @@ def async_download_and_process():
                 matched_faq = None
                 gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
+            original_msg = next((m for m in all_messages if m.get("id") == msg_id), {})
+            created_at_ms = original_msg.get("created_at")
+            created_at = datetime.datetime.fromtimestamp(created_at_ms / 1000.0) if created_at_ms else None
+
             Message.objects.update_or_create(
                 message_id=msg_id,
                 defaults={
@@ -142,7 +146,29 @@ def async_download_and_process():
                     "gpt_label": gpt_eval.get("label"),
                     "gpt_score": gpt_eval.get("score"),
                     "gpt_reason": gpt_eval.get("reason"),
-                    "matched_faq": matched_faq
+                    "matched_faq": matched_faq,
+
+                    "csid": original_msg.get("csid"),
+                    "created_at": created_at,
+                    "author_name": original_msg.get("author_name"),
+                    "author_email": original_msg.get("author_email"),
+                    "channel": original_msg.get("initial_channel"),
+                    "direction": original_msg.get("direction"),
+                    "from_phone_number": original_msg.get("from_phone_number"),
+                    "to_phone_number": original_msg.get("to_phone_number"),
+                    "duration": original_msg.get("duration"),
+                    "to": original_msg.get("to"),
+                    "from_field": original_msg.get("from"),
+                    "cc": original_msg.get("cc"),
+                    "bcc": original_msg.get("bcc"),
+                    "is_automated_message": original_msg.get("is_automated_message"),
+                    "voicemail_url": original_msg.get("voicemail_url"),
+                    "recording_url": original_msg.get("recording_url"),
+                    "attached_files": original_msg.get("attached_files"),
+                    "chat_input_question": original_msg.get("chat_input_question"),
+                    "chat_input_answer": original_msg.get("chat_input_answer"),
+                    "chat_menu_text": original_msg.get("chat_menu_text"),
+                    "form_submission": original_msg.get("formSubmission"),
                 }
             )
             saved_count += 1
