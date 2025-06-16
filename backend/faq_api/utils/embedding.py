@@ -160,39 +160,55 @@ class Tokenizer:
         return embeddings
 
     def embed_and_store_faqs(self, faq_items):
+        print("📌 Starting FAQ embedding...")
+    
         if not isinstance(faq_items, list):
             raise ValueError("Expected a list of FAQ dictionaries.")
-
+    
         embedded_count = 0
         failed = []
-
+    
         for i, faq in enumerate(faq_items, 1):
             question = faq.get("question", "").strip()
             answer = faq.get("answer", "").strip()
-
+    
             if not question or not answer:
-                print(f"⚠️ Skipping FAQ #{i} due to missing text")
+                print(f"⚠️ Skipping FAQ #{i} — missing question or answer")
                 continue
-
+    
             try:
+                print(f"🔹 Embedding FAQ #{i}: {question[:50]}...")
                 response = openai.embeddings.create(
                     input=question,
                     model=self.model
                 )
+    
+                if not response or not response.data or not hasattr(response.data[0], "embedding"):
+                    raise Exception("OpenAI returned an empty or invalid embedding")
+    
                 embedding = response.data[0].embedding
-
-                FAQ.objects.update_or_create(
+    
+                faq_obj, created = FAQ.objects.update_or_create(
                     question=question,
-                    defaults={"answer": answer, "embedding": embedding}
+                    defaults={
+                        "answer": answer,
+                        "embedding": embedding
+                    }
                 )
+    
+                action = "Created" if created else "Updated"
+                print(f"✅ {action} FAQ #{i}: {question[:50]}")
                 embedded_count += 1
-                print(f"✅ Embedded FAQ #{i}: {question[:60]}")
-
+    
             except Exception as e:
-                print(f"❌ Error embedding FAQ #{i}: {e}")
+                print(f"❌ Error embedding FAQ #{i}: {question[:50]} | {e}")
                 failed.append({"question": question, "error": str(e)})
-
-        print(f"\n✅ Finished embedding. Total saved: {embedded_count}")
+    
+        print(f"\n🎯 Finished embedding {embedded_count} FAQs")
         if failed:
-            print(f"❌ Failed: {len(failed)}")
+            print(f"❌ Failed FAQs: {len(failed)}")
+            for f in failed[:3]:
+                print(f"  - Question: {f['question'][:50]} | Error: {f['error']}")
+    
         return embedded_count, failed
+
