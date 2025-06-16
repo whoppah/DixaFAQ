@@ -21,3 +21,4 @@ ipython>=8.0
 google-cloud-storage
 hdbscan>=0.8.33  
 umap-learn>=0.5
+beautifulsoup4>=4.12
