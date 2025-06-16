@@ -110,7 +110,6 @@ def embed_messages_task(prev):
     print(f"✅ Embeddings saved: {embeddings_path}")
     return {**prev, "embeddings_path": embeddings_path, "embeddings": embeddings}
 
-
 @shared_task
 def match_messages_task(prev):
     print("🔍 Matching messages to FAQs...")
@@ -123,33 +122,20 @@ def match_messages_task(prev):
 
     saved = 0
     for item in prev["embeddings"]:
-        msg_id, text, embedding = item["id"], item["text"], item["embedding"]
+        msg_id = item["id"]
+        text = item["text"]
+        embedding = item["embedding"]
         if not msg_id or not text or not embedding:
             continue
-
-        sentiment = sentiment_analyzer.analyze(text)
-        try:
-            top_faqs = find_top_faqs(embedding, top_n=5)
-            matched_faq = rerank_with_gpt(text, top_faqs, openai_api_key=openai_key)
-            gpt_eval = gpt.score_resolution(text, matched_faq.answer)
-        except Exception as e:
-            print(f"⚠️ Matching failed for {msg_id}: {e}")
-            matched_faq = None
-            gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
         orig = next((m for m in original if m.get("id") == msg_id), {})
         created_at = datetime.datetime.fromtimestamp(orig.get("created_at", 0) / 1000) if orig.get("created_at") else None
 
-        Message.objects.update_or_create(
+        message_obj, _ = Message.objects.update_or_create(
             message_id=msg_id,
             defaults={
                 "text": text,
                 "embedding": embedding,
-                "sentiment": sentiment,
-                "gpt_label": gpt_eval["label"],
-                "gpt_score": gpt_eval["score"],
-                "gpt_reason": gpt_eval["reason"],
-                "matched_faq": matched_faq,
                 "csid": orig.get("csid"),
                 "created_at": created_at,
                 "author_name": orig.get("author_name"),
@@ -173,10 +159,35 @@ def match_messages_task(prev):
                 "form_submission": orig.get("formSubmission"),
             }
         )
+
+        try:
+            sentiment = sentiment_analyzer.analyze(text)
+        except Exception as e:
+            print(f"⚠️ Sentiment analysis failed for {msg_id}: {e}")
+            sentiment = None
+
+        try:
+            top_faqs = find_top_faqs(embedding, top_n=5)
+            matched_faq = rerank_with_gpt(text, top_faqs, openai_api_key=openai_key)
+            gpt_eval = gpt.score_resolution(text, matched_faq.answer)
+        except Exception as e:
+            print(f"⚠️ GPT match/scoring failed for {msg_id}: {e}")
+            matched_faq = None
+            gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
+
+        Message.objects.filter(message_id=msg_id).update(
+            sentiment=sentiment,
+            gpt_label=gpt_eval["label"],
+            gpt_score=gpt_eval["score"],
+            gpt_reason=gpt_eval["reason"],
+            matched_faq=matched_faq
+        )
+
         saved += 1
 
-    print(f"✅ Updated {saved} messages")
+    print(f"✅ Updated {saved} messages with embeddings and GPT analysis")
     return {**prev, "saved_messages": saved}
+
 
 
 @shared_task
