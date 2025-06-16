@@ -90,39 +90,34 @@ class Tokenizer:
         print(f"✅ Inserted or updated: {inserted}")
         print(f"⚠️ Skipped (missing ID or text): {skipped}")
 
-    def embed_all(self):
-        print("🔍 Starting to get the embeddings...")
-        if not os.path.exists(self.messages_path):
-            raise FileNotFoundError(f"Input file not found: {self.messages_path}")
-
-        with open(self.messages_path, "r", encoding="utf-8") as f:
-            messages = json.load(f)
-
+   def embed_all(self):
+        print("🔍 Starting DB-based embedding for messages without embeddings...")
         embeddings = []
         skipped = 0
 
+        messages = Message.objects.filter(embedding__isnull=True)
+    
+        if not messages.exists():
+            print("⚠️ No messages found without embeddings.")
+            return []
+    
         for msg in messages:
-            msg_id = msg.get("id")
-            raw_text = msg.get("text", "")
-
+            msg_id = msg.message_id
+            raw_text = msg.text or ""
+    
             if not isinstance(raw_text, str) or not raw_text.strip():
                 print(f"⚠️ Skipping message ID {msg_id} – empty or non-string text")
                 skipped += 1
                 continue
-
-            if not msg_id:
-                print(f"⚠️ Skipping message with missing ID: {raw_text[:50]}")
-                skipped += 1
-                continue
-
+    
             stripped_text = self.strip_html(raw_text)
             if not stripped_text.strip():
-                print(f"⚠️ Skipping message ID {msg_id} – text empty after HTML stripping")
+                print(f"⚠️ Skipping message ID {msg_id} – empty after HTML stripping")
                 skipped += 1
                 continue
-
+    
             clean_text = self.truncate_text(stripped_text)
-
+    
             try:
                 response = openai.embeddings.create(
                     input=clean_text,
@@ -131,33 +126,33 @@ class Tokenizer:
                 embedding_data = response.data
                 if embedding_data:
                     embedding = embedding_data[0].embedding
+                    msg.embedding = embedding
+                    msg.save(update_fields=["embedding"])
+    
                     embeddings.append({
                         "id": msg_id,
                         "embedding": embedding,
                         "text": clean_text
                     })
-
-                    updated = Message.objects.filter(message_id=msg_id).update(embedding=embedding)
-                    if updated:
-                        print(f"✅ Stored embedding for message ID: {msg_id}")
-                    else:
-                        print(f"⚠️ No matching Message record for ID: {msg_id}")
+    
+                    print(f"✅ Embedded message ID: {msg_id}")
                 else:
                     print(f"❌ No embedding returned for message ID: {msg_id}")
             except Exception as e:
                 print(f"❌ Error embedding message ID {msg_id}: {e}")
                 continue
-
+    
         if self.output_path:
             try:
                 with open(self.output_path, "w", encoding="utf-8") as f:
                     json.dump(embeddings, f, indent=2)
-                print(f"✅ Embeddings saved to {self.output_path}")
+                print(f"💾 Embeddings also saved to file: {self.output_path}")
             except Exception as e:
-                print(f"❌ Failed to save embeddings: {e}")
-
-        print(f"\n✅ Finished embedding. Total: {len(embeddings)} | Skipped: {skipped}")
+                print(f"❌ Failed to save embeddings file: {e}")
+    
+        print(f"\n🎯 Embedding complete — Total: {len(embeddings)} | Skipped: {skipped}")
         return embeddings
+
 
     def embed_and_store_faqs(self, faq_items):
         print("📌 Starting FAQ embedding...")
