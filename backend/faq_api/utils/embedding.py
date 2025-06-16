@@ -90,7 +90,7 @@ class Tokenizer:
         print(f"✅ Inserted or updated: {inserted}")
         print(f"⚠️ Skipped (missing ID or text): {skipped}")
 
-   def embed_all(self):
+    def embed_all(self):
         print("🔍 Starting DB-based embedding for messages without embeddings...")
         embeddings = []
         skipped = 0
