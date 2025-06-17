@@ -79,7 +79,6 @@ def download_dixa_task():
             defaults={
                 "csid": msg.get("csid"),
                 "created_at": created_at,
-                "initial_channel": msg.get("initial_channel"),
                 "author_name": msg.get("author_name"),
                 "author_email": msg.get("author_email"),
                 "direction": msg.get("direction"),
