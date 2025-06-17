@@ -9,7 +9,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-def process_clusters_and_save():
+def run_clustering_and_save():
     logger.info("Starting clustering pipeline...")
 
     ClusterRun.objects.all().delete()
