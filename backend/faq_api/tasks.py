@@ -1,20 +1,40 @@
 #backend/faq_api/tasks.py
 import os
 import json
+import time
 import datetime
 import tempfile
+import logging
 from celery import shared_task, chain
 from google.cloud import storage
 
+from faq_api.models import Message, FAQ
 from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
 from faq_api.utils.embedding import Tokenizer
 from faq_api.utils.sentiment import SentimentAnalyzer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.faq_matcher import find_top_faqs, rerank_with_gpt
-from faq_api.utils.pipeline_runner import process_clusters_and_save
-from faq_api.models import Message, FAQ
+from faq_api.utils.preprocess import MessagePreprocessor
+from faq_api.utils.clustering_pipeline import run_clustering_and_save
 
+logger = logging.getLogger(__name__)
+
+# === Task decorator for logging ===
+def log_task(func):
+    def wrapper(*args, **kwargs):
+        task_name = func.__name__
+        logger.info(f"🚀 Starting task: {task_name}")
+        start = time.time()
+        try:
+            result = func(*args, **kwargs)
+            duration = round(time.time() - start, 2)
+            logger.info(f"✅ Finished task: {task_name} in {duration}s | Result: {result}")
+            return result
+        except Exception as e:
+            logger.exception(f"❌ Task failed: {task_name} — {e}")
+            raise
+    return wrapper
 
 def setup_google_credentials_from_env():
     raw = os.getenv("GOOGLE_CREDENTIALS_JSON")
@@ -27,10 +47,9 @@ def setup_google_credentials_from_env():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp.name
     return temp.name
 
-
 @shared_task
+@log_task
 def download_dixa_task():
-    print("🔽 Task: download_dixa_task")
     dixa_token = os.getenv("DIXA_API_TOKEN")
     if not dixa_token:
         raise Exception("Missing DIXA_API_TOKEN")
@@ -40,7 +59,6 @@ def download_dixa_task():
         start_date=datetime.datetime(2025, 5, 1),
         end_date=datetime.datetime.now()
     )
-
     messages, _ = dixa.download_all_dixa_data()
     inserted = 0
 
@@ -81,13 +99,11 @@ def download_dixa_task():
         )
         inserted += 1
 
-    print(f"✅ Inserted {inserted} messages into DB.")
     return {"message_count": inserted}
 
-
 @shared_task
+@log_task
 def download_elevio_task(prev):
-    print("🔽 Task: download_elevio_task")
     elevio_key = os.getenv("ELEVIO_API_KEY")
     elevio_jwt = os.getenv("ELEVIO_JWT")
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -101,26 +117,35 @@ def download_elevio_task(prev):
 
     return {**prev, "faq_count": len(faq_items)}
 
-
 @shared_task
+@log_task
 def preprocess_messages_task(prev):
-    print("🧹 Task: preprocess_messages_task")
-    print("ℹ️ Skipped — using DB messages directly.")
-    return prev
+    preprocessor = MessagePreprocessor()
+    messages = Message.objects.all()
+    cleaned = 0
 
+    for msg in messages:
+        if not msg.text:
+            continue
+        cleaned_text = preprocessor.anonymize_text(msg.text)
+        if cleaned_text != msg.text:
+            msg.text = cleaned_text
+            msg.save(update_fields=["text"])
+            cleaned += 1
+
+    return {**prev, "preprocessed": cleaned}
 
 @shared_task
+@log_task
 def embed_messages_task(prev):
-    print("🧠 Task: embed_messages_task")
     openai_key = os.getenv("OPENAI_API_KEY")
     tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
-    embeddings = tokenizer.embed_all()  # Also updates DB
+    embeddings = tokenizer.embed_all()
     return {**prev, "embedded_count": len(embeddings)}
 
-
 @shared_task
+@log_task
 def match_messages_task(prev):
-    print("🔍 Task: match_messages_task (DB-based)")
     openai_key = os.getenv("OPENAI_API_KEY")
     gpt = GPTFAQAnalyzer(openai_api_key=openai_key)
     sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
@@ -128,13 +153,11 @@ def match_messages_task(prev):
     saved = 0
     messages = Message.objects.filter(embedding__isnull=False)
 
-    print(f"ℹ️ Found {messages.count()} messages with embeddings in DB")
-
     for msg in messages:
         try:
             sentiment = sentiment_analyzer.analyze(msg.text)
         except Exception as e:
-            print(f"⚠️ Sentiment failed for {msg.message_id}: {e}")
+            logger.warning(f"Sentiment failed for {msg.message_id}: {e}")
             sentiment = None
 
         try:
@@ -142,51 +165,51 @@ def match_messages_task(prev):
             matched_faq = rerank_with_gpt(msg.text, top_faqs, openai_api_key=openai_key)
             gpt_eval = gpt.score_resolution(msg.text, matched_faq.answer)
         except Exception as e:
-            print(f"⚠️ GPT failed for {msg.message_id}: {e}")
+            logger.warning(f"GPT match failed for {msg.message_id}: {e}")
             matched_faq = None
             gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
-        Message.objects.filter(id=msg.id).update(
-            sentiment=sentiment,
-            gpt_label=gpt_eval["label"],
-            gpt_score=gpt_eval["score"],
-            gpt_reason=gpt_eval["reason"],
-            matched_faq=matched_faq
-        )
+        msg.sentiment = sentiment
+        msg.gpt_label = gpt_eval["label"]
+        msg.gpt_score = gpt_eval["score"]
+        msg.gpt_reason = gpt_eval["reason"]
+        msg.matched_faq = matched_faq
+        msg.save(update_fields=[
+            "sentiment", "gpt_label", "gpt_score", "gpt_reason", "matched_faq"
+        ])
         saved += 1
 
-    print(f"✅ Matched and updated {saved} messages")
     return {**prev, "matched_messages": saved}
 
 
 @shared_task
-def upload_artifacts_task(prev):
-    print("☁️ Task: upload_artifacts_task")
+@log_task
+def upload_artifacts_task(prev): #for now it is not included in the pipeline 
     setup_google_credentials_from_env()
     bucket = os.getenv("GCS_BUCKET_NAME")
     if not bucket:
         raise Exception("Missing GCS_BUCKET_NAME")
-
-    print("ℹ️ No artifacts to upload in DB-first pipeline.")
     return {**prev, "uploaded": "skipped"}
 
 @shared_task
+@log_task
 def cluster_and_summarize_task(prev):
-    print("📊 Task: cluster_and_summarize_task")
-    process_clusters_and_save()
-    print("✅ Clustering complete.")
-    return {"status": "pipeline_complete", **prev}
-
+    clusters_created = run_clustering_and_save()
+    return {
+        "status": "pipeline_complete",
+        "clusters_created": clusters_created,
+        **prev
+    }
 
 @shared_task(name="faq_api.tasks.start_pipeline")
+@log_task
 def start_pipeline():
-    print("🚀 Starting FAQ pipeline...")
     return chain(
         download_dixa_task.s(),
         download_elevio_task.s(),
         preprocess_messages_task.s(),
         embed_messages_task.s(),
         match_messages_task.s(),
-        upload_artifacts_task.s(),
         cluster_and_summarize_task.s()
     ).apply_async()
+
