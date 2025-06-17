@@ -139,11 +139,16 @@ def embed_messages_task(prev):
 
     openai_key = os.getenv("OPENAI_API_KEY")
     tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
+
+    count = Message.objects.filter(embedding__isnull=True).count()
+    print(f"🔍 Messages to embed: {count}")
+
     embeddings = tokenizer.embed_all()
 
     duration = round(time.time() - start, 2)
     print(f"✅ Finished task: embed_messages_task in {duration}s | Count: {len(embeddings)}")
     return {**prev, "embedded_count": len(embeddings)}
+
 
 
 @shared_task
