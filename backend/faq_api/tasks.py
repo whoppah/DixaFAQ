@@ -21,7 +21,10 @@ from faq_api.utils.clustering_pipeline import run_clustering_and_save
 logger = logging.getLogger(__name__)
 
 # === Task decorator for logging ===
+from functools import wraps
+
 def log_task(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         task_name = func.__name__
         logger.info(f"🚀 Starting task: {task_name}")
@@ -35,6 +38,7 @@ def log_task(func):
             logger.exception(f"❌ Task failed: {task_name} — {e}")
             raise
     return wrapper
+
 
 def setup_google_credentials_from_env():
     raw = os.getenv("GOOGLE_CREDENTIALS_JSON")
