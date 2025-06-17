@@ -19,6 +19,5 @@ urlpatterns = [
     path("faq/top-process-gaps/", views.top_process_gaps),
     path("api/trigger-pipeline/", views.trigger_pipeline),
     path("api/current-user-info/", views.current_user_info),
-    path("clusters/", views.cluster_results),
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
 ]
