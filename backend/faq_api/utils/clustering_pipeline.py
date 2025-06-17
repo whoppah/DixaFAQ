@@ -1,4 +1,4 @@
-#backend/faq_api/utils/pipeline_runner.py
+#backend/faq_api/utils/clustering_pipeline.py
 import logging
 from django.conf import settings
 from faq_api.models import Message, FAQ, ClusterResult, ClusterRun
@@ -10,7 +10,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 def process_clusters_and_save():
-    logger.info("🚀 Starting cluster processing pipeline...")
+    logger.info("Starting clustering pipeline...")
 
     ClusterRun.objects.all().delete()
     run = ClusterRun.objects.create(notes="Automated weekly pipeline")
@@ -109,4 +109,4 @@ def process_clusters_and_save():
         except Exception as e:
             logger.exception(f"❌ Failed processing cluster {cluster_id}: {e}")
 
-    logger.info("🏁 Pipeline processing completed successfully.")
+    logger.info("Clustering pipeline processing completed successfully.")
