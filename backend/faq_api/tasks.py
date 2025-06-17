@@ -7,7 +7,7 @@ import tempfile
 import logging
 from celery import shared_task, chain
 from google.cloud import storage
-
+from django.utils.timezone import make_aware
 from faq_api.models import Message, FAQ
 from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
@@ -71,8 +71,7 @@ def download_dixa_task():
         text = msg.get("text")
         if not msg_id or not text:
             continue
-
-        created_at = datetime.datetime.fromtimestamp(msg["created_at"] / 1000) if msg.get("created_at") else None
+        created_at = make_aware(datetime.datetime.fromtimestamp(msg["created_at"] / 1000)) if msg.get("created_at") else None
 
         Message.objects.update_or_create(
             message_id=msg_id,
