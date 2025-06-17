@@ -21,6 +21,8 @@ from faq_api.serializers import (
 )
 from faq_api.tasks import async_download_and_process
 from faq_api.utils.gpt import GPTFAQAnalyzer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 
 class MessageViewSet(viewsets.ReadOnlyModelViewSet):
@@ -287,6 +289,26 @@ Questions:
         return Response({"process_gaps": result})
     except Exception as e:
         return Response({"error": "GPT failed", "details": str(e)}, status=500)
+
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def cluster_results(request):
+    latest_run = ClusterRun.objects.order_by("-created_at").first()
+    if not latest_run:
+        return Response({"clusters": [], "cluster_map": []})
+
+    clusters = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq")
+    clusters_data = ClusterResultSerializer(clusters, many=True).data
+
+    cluster_map = latest_run.cluster_map or []
+
+    return Response({
+        "clusters": clusters_data,
+        "cluster_map": cluster_map
+    })
+
 
 
 
