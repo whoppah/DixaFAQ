@@ -103,3 +103,45 @@ REST_FRAMEWORK = {
 # === DEFAULT ===
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# === LOGGING ===
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} — {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",  # or "simple"
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",  
+    },
+    "loggers": {
+        "faq_api": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}
