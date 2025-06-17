@@ -170,7 +170,6 @@ def upload_artifacts_task(prev):
     print("ℹ️ No artifacts to upload in DB-first pipeline.")
     return {**prev, "uploaded": "skipped"}
 
-
 @shared_task
 def cluster_and_summarize_task(prev):
     print("📊 Task: cluster_and_summarize_task")
