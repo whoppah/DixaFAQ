@@ -14,17 +14,17 @@ class MessageClusterer:
 
     def cluster_embeddings(self, embeddings):
         """
-        embeddings: list of dictionaries with keys 'id', 'embedding', and optionally 'text'
+        embeddings: list of dictionaries with keys 'message_id', 'embedding', and optionally 'text'
         """
         if not embeddings:
             return {}, [], np.array([])
     
-        vecs = np.array([e['message_id'] for e in embeddings])
+        vecs = np.array([e['embedding'] for e in embeddings])   
     
         if vecs.size == 0 or len(vecs.shape) != 2:
             raise ValueError("Empty or invalid embeddings provided for clustering.")
     
-        ids = [e['id'] for e in embeddings]
+        ids = [e['message_id'] for e in embeddings]  
     
         clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_size, metric='euclidean')
         labels = clusterer.fit_predict(vecs)
@@ -35,14 +35,15 @@ class MessageClusterer:
         for i, label in enumerate(labels):
             id_to_label[ids[i]] = label
             if label == -1:
-                continue  # noise
+                continue   
             clustered.setdefault(label, []).append({
-                "id": ids[i],
+                "message_id": ids[i],
                 "embedding": embeddings[i]['embedding'],
                 "text": embeddings[i].get('text', '')
             })
     
         return clustered, labels, vecs
+
 
 
     def compute_centroids(self, clusters):
