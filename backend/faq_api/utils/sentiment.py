@@ -1,11 +1,11 @@
 #backend/faq_api/utils/sentiment.py
-import openai
+from openai import OpenAI
 from django.conf import settings
 
 class SentimentAnalyzer:
     def __init__(self, model="gpt-3.5-turbo", api_key=None):
+        self.client = OpenAI(api_key=api_key or settings.OPENAI_API_KEY)
         self.model = model
-        self.api_key = api_key or settings.OPENAI_API_KEY
 
     def analyze(self, text):
         prompt = (
@@ -16,16 +16,15 @@ class SentimentAnalyzer:
         )
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
-                api_key=self.api_key,
                 messages=[
                     {"role": "system", "content": "You analyze customer support sentiment."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0,
             )
-            sentiment = response.choices[0].message['content'].strip().lower()
+            sentiment = response.choices[0].message.content.strip().lower()
 
             if "positive" in sentiment:
                 return "positive"
