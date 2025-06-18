@@ -9,35 +9,47 @@ class GPTFAQAnalyzer:
 
     def score_resolution(self, question, faq_answer):
         prompt = f"""
-Evaluate the resolution quality of this FAQ in response to the user's message.
-
-User message:
-{question}
-
-FAQ answer:
-{faq_answer}
-
-Provide:
-- A label: Fully / Partially / Not covered
-- A numeric score: 5 (excellent) to 1 (poor)
-- A short explanation
-Respond in JSON format like:
-{{"label": "...", "score": ..., "reason": "..."}}
-"""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        content = response.choices[0].message.content
-
+    Evaluate the resolution quality of this FAQ in response to the user's message.
+    
+    User message:
+    {question}
+    
+    FAQ answer:
+    {faq_answer}
+    
+    Provide:
+    - A label: Fully / Partially / Not covered
+    - A numeric score: 5 (excellent) to 1 (poor)
+    - A short explanation
+    Respond in JSON format like:
+    {{"label": "...", "score": ..., "reason": "..."}}
+    """
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            content = response.choices[0].message.content
+        except Exception as e:
+            print(f"❌ GPT API call failed: {e}")
+            return {"label": "Unknown", "score": 0, "reason": "API error"}
+    
         try:
             parsed = json.loads(content)
             if isinstance(parsed, dict) and "label" in parsed and "score" in parsed:
+               
+                try:
+                    parsed["score"] = int(parsed["score"])
+                except Exception:
+                    pass
                 return parsed
-        except Exception:
-            pass
+            else:
+                raise ValueError("Missing required keys in JSON response")
+        except Exception as e:
+            print(f"⚠️ Failed to parse GPT score response: {e}")
+            print(f"⚠️ Raw content from GPT:\n{content}")
+            return {"label": "Unknown", "score": 0, "reason": content}
 
-        return {"label": "Unknown", "score": 0, "reason": content}
 
     def get_sentiment(self, text):
         prompt = f"What is the sentiment of this message? Respond with: Positive, Neutral, or Negative.\n\nMessage: {text}"
