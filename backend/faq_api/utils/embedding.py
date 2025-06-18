@@ -40,55 +40,57 @@ class Tokenizer:
         print("📥 Loading and inserting messages...")
         if not os.path.exists(self.messages_path):
             raise FileNotFoundError(f"Input file not found: {self.messages_path}")
-
+    
         with open(self.messages_path, "r", encoding="utf-8") as f:
             messages = json.load(f)
-
+    
         inserted = 0
         skipped = 0
-
+    
         for msg in messages:
             msg_id = msg.get("id")
             text = msg.get("text")
-
+    
             if not msg_id or not text:
                 skipped += 1
                 continue
-
+    
             created_at_ms = msg.get("created_at")
             created_at = datetime.fromtimestamp(created_at_ms / 1000.0) if created_at_ms else None
-
+    
+            # Safely extract each field with fallback to None
             Message.objects.update_or_create(
                 message_id=msg_id,
                 defaults={
-                    "csid": msg.get("csid"),
+                    "csid": msg.get("csid") or None,
                     "created_at": created_at,
-                    "initial_channel": msg.get("initial_channel"),
-                    "author_name": msg.get("author_name"),
-                    "author_email": msg.get("author_email"),
-                    "direction": msg.get("direction"),
+                    "initial_channel": msg.get("initial_channel") or None,
+                    "author_name": msg.get("author_name") or None,
+                    "author_email": msg.get("author_email") or None,
+                    "direction": msg.get("direction") or None,
                     "text": text,
-                    "from_phone_number": msg.get("from_phone_number"),
-                    "to_phone_number": msg.get("to_phone_number"),
-                    "duration": msg.get("duration"),
-                    "to": msg.get("to"),
-                    "from_field": msg.get("from"),
-                    "cc": msg.get("cc"),
-                    "bcc": msg.get("bcc"),
-                    "is_automated_message": msg.get("is_automated_message"),
-                    "voicemail_url": msg.get("voicemail_url"),
-                    "recording_url": msg.get("recording_url"),
-                    "attached_files": msg.get("attached_files"),
-                    "chat_input_question": msg.get("chat_input_question"),
-                    "chat_input_answer": msg.get("chat_input_answer"),
-                    "chat_menu_text": msg.get("chat_menu_text"),
-                    "form_submission": msg.get("formSubmission"),
+                    "from_phone_number": msg.get("from_phone_number") or None,
+                    "to_phone_number": msg.get("to_phone_number") or None,
+                    "duration": msg.get("duration") or None,
+                    "to": msg.get("to") if isinstance(msg.get("to"), list) else [],
+                    "from_field": msg.get("from") or None,
+                    "cc": msg.get("cc") if isinstance(msg.get("cc"), list) else [],
+                    "bcc": msg.get("bcc") if isinstance(msg.get("bcc"), list) else [],
+                    "is_automated_message": msg.get("is_automated_message") or False,
+                    "voicemail_url": msg.get("voicemail_url") or None,
+                    "recording_url": msg.get("recording_url") or None,
+                    "attached_files": msg.get("attached_files") if isinstance(msg.get("attached_files"), list) else [],
+                    "chat_input_question": msg.get("chat_input_question") or None,
+                    "chat_input_answer": msg.get("chat_input_answer") or None,
+                    "chat_menu_text": msg.get("chat_menu_text") or None,
+                    "form_submission": msg.get("formSubmission") or None,
                 }
             )
             inserted += 1
-
+    
         print(f"✅ Inserted or updated: {inserted}")
         print(f"⚠️ Skipped (missing ID or text): {skipped}")
+
 
     def embed_all(self):
         print("🔍 Starting DB-based embedding for messages without embeddings...")
@@ -134,7 +136,7 @@ class Tokenizer:
 
     
                     embeddings.append({
-                        "id": msg_id,
+                        "message_id": msg_id,
                         "embedding": embedding,
                         "text": clean_text
                     })
@@ -168,8 +170,8 @@ class Tokenizer:
         failed = []
     
         for i, faq in enumerate(faq_items, 1):
-            question = faq.get("question", "").strip()
-            answer = faq.get("answer", "").strip()
+            question = (faq.get("question") or "").strip()
+            answer = (faq.get("answer") or "").strip()
     
             if not question or not answer:
                 print(f"⚠️ Skipping FAQ #{i} — missing question or answer")
