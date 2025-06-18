@@ -3,7 +3,7 @@ from openai import OpenAI
 from django.conf import settings
 
 class SentimentAnalyzer:
-    def __init__(self, model="gpt-3.5-turbo", api_key=None):
+    def __init__(self, model="gpt-4o", api_key=None):
         self.client = OpenAI(api_key=api_key or settings.OPENAI_API_KEY)
         self.model = model
 
