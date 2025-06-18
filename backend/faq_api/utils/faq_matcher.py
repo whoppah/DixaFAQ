@@ -36,8 +36,13 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
         )
-        content = response.choices[0].message.content.strip()
-        index = int(content) - 1
+        content = response.choices[0].message["content"].strip()
+        try:
+            index = int(content.strip().replace(".", "")) - 1
+        except ValueError:
+            print(f"❌ GPT rerank failed: invalid number '{content}'")
+            return faq_candidates[0][0]
+            
         return faq_candidates[index][0]
     except Exception as e:
         print(f"❌ GPT rerank failed: {e}")
