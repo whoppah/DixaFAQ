@@ -152,19 +152,19 @@ def embed_messages_task(prev):
 
 
 @shared_task
-def match_messages_task(prev):
+def match_messages_task(prev, force=False):
     print("🚀 Starting task: match_messages_task")
     start = time.time()
-
+    
     openai_key = os.getenv("OPENAI_API_KEY")
     gpt = GPTFAQAnalyzer(openai_api_key=openai_key)
     sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
-
     saved = 0
-    messages = Message.objects.filter(
-        embedding__isnull=False,
-        gpt_score__isnull=True  # Only match messages that haven't been matched yet
-    )
+    
+    if force:
+        messages = Message.objects.filter(embedding__isnull=False)
+    else:
+        messages = Message.objects.filter(embedding__isnull=False, gpt_score__isnull=True) # Only match messages that haven't been matched yet
 
 
     for msg in messages:
