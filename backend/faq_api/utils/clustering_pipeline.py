@@ -6,6 +6,7 @@ from faq_api.utils.clustering import MessageClusterer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.sentiment import SentimentAnalyzer
 from datetime import datetime
+from faq_api.models import Message
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def run_clustering_and_save():
             keywords = clusterer.extract_keywords([msg["text"] for msg in items])
             topic_label = gpt.label_topic(items)
 
-            ClusterResult.objects.create(
+            result = ClusterResult.objects.create(
                 run=run,
                 cluster_id=cluster_id,
                 message_count=len(items),
@@ -105,6 +106,11 @@ def run_clustering_and_save():
                 faq_suggestion=faq_suggestion,
                 topic_label=topic_label
             )
+            
+            # Attach messages
+            message_ids = [msg["message_id"] for msg in items]
+            linked_messages = Message.objects.filter(message_id__in=message_ids)
+            result.messages.set(linked_messages)
             logger.info(f"✅ Saved cluster result for cluster_id={cluster_id} ({len(items)} messages)")
         except Exception as e:
             logger.exception(f"❌ Failed processing cluster {cluster_id}: {e}")
