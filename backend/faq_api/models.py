@@ -14,7 +14,7 @@ class FAQ(models.Model):
 
  
 class Message(models.Model):
-    message_id = models.CharField(max_length=100, unique=True)
+    message_id = models.CharField(max_length=255, primary_key=True)
     text = models.TextField()
     author_name = models.CharField(max_length=100, null=True, blank=True)
     author_email = models.EmailField(null=True, blank=True)
