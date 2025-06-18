@@ -161,7 +161,11 @@ def match_messages_task(prev):
     sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
 
     saved = 0
-    messages = Message.objects.filter(embedding__isnull=False)
+    messages = Message.objects.filter(
+        embedding__isnull=False,
+        gpt_score__isnull=True  # Only match messages that haven't been matched yet
+    )
+
 
     for msg in messages:
         try:
