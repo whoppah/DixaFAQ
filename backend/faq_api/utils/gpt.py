@@ -21,7 +21,9 @@ class GPTFAQAnalyzer:
     - A label: Fully / Partially / Not covered
     - A numeric score: 5 (excellent) to 1 (poor)
     - A short explanation
-    Respond in JSON format like:
+    
+    Respond in JSON format. Do NOT include any markdown formatting, code blocks, or triple backticks.
+    Format:
     {{"label": "...", "score": ..., "reason": "..."}}
     """
         try:
@@ -29,26 +31,27 @@ class GPTFAQAnalyzer:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}]
             )
-            content = response.choices[0].message.content
+            content = response.choices[0].message.content.strip()
         except Exception as e:
             print(f"❌ GPT API call failed: {e}")
             return {"label": "Unknown", "score": 0, "reason": "API error"}
     
+        #Strip markdown code block formatting if present
+        if content.startswith("```") and content.endswith("```"):
+            content = content.strip("` \n")
+            if content.startswith("json"):
+                content = content[4:].strip()
+    
         try:
             parsed = json.loads(content)
             if isinstance(parsed, dict) and "label" in parsed and "score" in parsed:
-               
-                try:
-                    parsed["score"] = int(parsed["score"])
-                except Exception:
-                    pass
                 return parsed
-            else:
-                raise ValueError("Missing required keys in JSON response")
         except Exception as e:
             print(f"⚠️ Failed to parse GPT score response: {e}")
             print(f"⚠️ Raw content from GPT:\n{content}")
-            return {"label": "Unknown", "score": 0, "reason": content}
+    
+        return {"label": "Unknown", "score": 0, "reason": content}
+
 
 
     def get_sentiment(self, text):
@@ -75,20 +78,39 @@ Suggest a better FAQ (Q&A) to address the following user message if the current 
 User message:
 {question}
 
-Respond in JSON:
+Respond ONLY with a raw JSON object. Do NOT include any markdown formatting, triple backticks, or explanation.
+
+Format:
 {{
   "question": "...",
   "answer": "..."
 }}
 """
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}]
-        )
         try:
-            return json.loads(response.choices[0].message.content)
-        except Exception:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            content = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"❌ GPT API call failed during suggest_faq: {e}")
             return {"question": "", "answer": ""}
+    
+        #Strip markdown-style code blocks if present
+        if content.startswith("```") and content.endswith("```"):
+            content = content.strip("` \n")
+            if content.startswith("json"):
+                content = content[4:].strip()
+    
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict) and "question" in parsed and "answer" in parsed:
+                return parsed
+        except Exception as e:
+            print(f"⚠️ Failed to parse GPT FAQ suggestion: {e}")
+            print(f"⚠️ Raw content:\n{content}")
+    
+        return {"question": "", "answer": ""}
 
     def label_topic(self, messages):
         text = "\n".join([msg["text"] for msg in messages[:5]])
