@@ -7,7 +7,7 @@ class FAQ(models.Model):
     question = models.TextField()
     answer = models.TextField()
     embedding = ArrayField(models.FloatField(), null=True, blank=True)
-    embedding_updated_at = models.DateTimeField(null=True, blank=True)
+    #embedding_updated_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.question[:80]
@@ -44,7 +44,7 @@ class Message(models.Model):
     form_submission = models.JSONField(null=True, blank=True)
 
     embedding = ArrayField(models.FloatField(), null=True, blank=True)
-    embedding_updated_at = models.DateTimeField(null=True, blank=True)
+    #embedding_updated_at = models.DateTimeField(null=True, blank=True)
 
     sentiment = models.CharField(max_length=20, null=True, blank=True)
     gpt_score = models.IntegerField(null=True, blank=True)
