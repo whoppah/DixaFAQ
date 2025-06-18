@@ -19,7 +19,7 @@ class MessageClusterer:
         if not embeddings:
             return {}, [], np.array([])
     
-        vecs = np.array([e['embedding'] for e in embeddings])
+        vecs = np.array([e['message_id'] for e in embeddings])
     
         if vecs.size == 0 or len(vecs.shape) != 2:
             raise ValueError("Empty or invalid embeddings provided for clustering.")
