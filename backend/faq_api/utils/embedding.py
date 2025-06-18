@@ -127,8 +127,10 @@ class Tokenizer:
                 if embedding_data:
                     embedding = embedding_data[0].embedding
                     msg.embedding = embedding
-                    msg.embedding_updated_at = datetime.utcnow()
-                    msg.save(update_fields=["embedding", "embedding_updated_at"])
+                    msg.save(update_fields=["embedding"])
+                    #msg.embedding_updated_at = datetime.utcnow()
+                    #msg.save(update_fields=["embedding", "embedding_updated_at"])
+                    
 
     
                     embeddings.append({
@@ -189,8 +191,7 @@ class Tokenizer:
                     question=question,
                     defaults={
                         "answer": answer,
-                        "embedding": embedding,
-                        "embedding_updated_at": datetime.utcnow()
+                        "embedding": embedding
                     }
                 )
                 action = "Created" if created else "Updated"
