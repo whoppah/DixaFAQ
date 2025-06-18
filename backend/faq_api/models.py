@@ -89,6 +89,7 @@ class ClusterResult(models.Model):
     resolution_reason = models.TextField()
     faq_suggestion = models.JSONField(null=True, blank=True)
     topic_label = models.CharField(max_length=100)
+    messages = models.ManyToManyField("Message", related_name="cluster_results", blank=True)
 
     class Meta:
         unique_together = ("run", "cluster_id")
