@@ -6,7 +6,6 @@ from faq_api.utils.clustering import MessageClusterer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.sentiment import SentimentAnalyzer
 from datetime import datetime
-from faq_api.models import Message
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ def run_clustering_and_save():
     messages = list(
         Message.objects.exclude(embedding=None).values("message_id", "text", "embedding", "created_at")
     )
-    faqs = list(FAQ.objects.exclude(embedding=None).values("question", "embedding"))
+    faqs = list(FAQ.objects.exclude(embedding=None).values("id", "question", "embedding"))
 
     logger.info(f"🗂️ Loaded {len(messages)} messages with embeddings")
     logger.info(f"📚 Loaded {len(faqs)} FAQs with embeddings")
@@ -32,6 +31,9 @@ def run_clustering_and_save():
     if not faqs:
         logger.warning("❌ No FAQs available for matching. Exiting pipeline.")
         return
+
+    # Pre-cache FAQs by question text
+    faq_map = {faq["question"]: FAQ.objects.get(id=faq["id"]) for faq in faqs}
 
     clusterer = MessageClusterer(min_cluster_size=5)
     clustered, labels, vecs = clusterer.cluster_embeddings(messages)
@@ -70,10 +72,12 @@ def run_clustering_and_save():
             created_at = items[0].get("created_at") or datetime.utcnow()
 
             matched = matches.get(cluster_id, {})
-            matched_faq = matched.get("matched_faq", "N/A")
+            matched_faq_question = matched.get("matched_faq", "")
             similarity = matched.get("similarity", 0.0)
 
-            score_data = gpt.score_resolution(top_message, matched_faq)
+            matched_faq = faq_map.get(matched_faq_question)
+
+            score_data = gpt.score_resolution(top_message, matched_faq_question)
             gpt_eval = f"{score_data.get('label')} — {score_data.get('reason')}"
             coverage_label = score_data.get("label", "Unknown")
             resolution_score = score_data.get("score", 0)
@@ -106,7 +110,7 @@ def run_clustering_and_save():
                 faq_suggestion=faq_suggestion,
                 topic_label=topic_label
             )
-            
+
             # Attach messages
             message_ids = [msg["message_id"] for msg in items]
             linked_messages = Message.objects.filter(message_id__in=message_ids)
