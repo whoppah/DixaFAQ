@@ -164,8 +164,7 @@ def match_messages_task(prev, force=False):
     if force:
         messages = Message.objects.filter(embedding__isnull=False)
     else:
-        messages = Message.objects.filter(embedding__isnull=False, gpt_score__isnull=True) # Only match messages that haven't been matched yet
-
+        messages = Message.objects.filter(embedding__isnull=False, gpt_score__isnull=True)
 
     for msg in messages:
         try:
@@ -176,8 +175,14 @@ def match_messages_task(prev, force=False):
 
         try:
             top_faqs = find_top_faqs(msg.embedding, top_n=5)
-            matched_faq = rerank_with_gpt(msg.text, top_faqs, openai_api_key=openai_key)
-            gpt_eval = gpt.score_resolution(msg.text, matched_faq.answer)
+            faq_id = rerank_with_gpt(msg.text, top_faqs, openai_api_key=openai_key)
+            matched_faq = FAQ.objects.filter(id=faq_id).first()
+
+            if matched_faq:
+                gpt_eval = gpt.score_resolution(msg.text, matched_faq.answer)
+            else:
+                raise Exception(f"FAQ not found for id={faq_id}")
+
         except Exception as e:
             print(f"⚠️ GPT match failed for {msg.message_id}: {e}")
             matched_faq = None
@@ -196,6 +201,7 @@ def match_messages_task(prev, force=False):
     duration = round(time.time() - start, 2)
     print(f"✅ Finished task: match_messages_task in {duration}s | Matched: {saved}")
     return {**prev, "matched_messages": saved}
+
 
 
 @shared_task
