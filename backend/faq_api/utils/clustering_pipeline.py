@@ -124,3 +124,4 @@ def run_clustering_and_save():
             logger.exception(f"❌ Failed processing cluster {cluster_id}: {e}")
 
     logger.info("Clustering pipeline processing completed successfully.")
+    return len(clustered)
