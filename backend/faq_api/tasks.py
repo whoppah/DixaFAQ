@@ -220,8 +220,8 @@ def upload_artifacts_task(prev):
 def cluster_and_summarize_task(prev):
     print("🚀 Starting task: cluster_and_summarize_task")
     start = time.time()
-
-    clusters_created = run_clustering_and_save()
+    
+    clusters_created = run_clustering_and_save() or 0
 
     duration = round(time.time() - start, 2)
     print(f"✅ Finished task: cluster_and_summarize_task in {duration}s | Clusters: {clusters_created}")
@@ -230,6 +230,7 @@ def cluster_and_summarize_task(prev):
         "clusters_created": clusters_created,
         **prev
     }
+
 
 
 @shared_task(name="faq_api.tasks.start_pipeline")
