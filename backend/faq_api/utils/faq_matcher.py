@@ -22,18 +22,17 @@ def find_top_faqs(message_embedding, top_n=5):
     return similarities[:top_n]
 
 def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
-    """
-    faq_candidates: list of dicts with keys 'faq', 'similarity', 'faq_id'
-    Returns: faq_id (int) of best match
-    """
     client = OpenAI(api_key=openai_api_key)
 
-    prompt = f"User message:\n{message_text}\n\nBelow are 5 FAQ entries:\n"
-    for i, entry in enumerate(faq_candidates, 1):
-        faq = entry["faq"]
+    prompt = (
+        f"You are an AI assistant. Your job is to find the most relevant FAQ from the list below "
+        f"that answers the user's message. Reply with only the number (1 to {len(faq_candidates)}), "
+        f"no punctuation or explanation.\n\n"
+        f"User message:\n{message_text}\n\n"
+        f"FAQ options:\n"
+    )
+    for i, (faq, _) in enumerate(faq_candidates, 1):
         prompt += f"{i}. Q: {faq.question}\n   A: {faq.answer}\n"
-
-    prompt += "\nWhich FAQ best matches the user's question? Reply with just the number (1–5)."
 
     try:
         response = client.chat.completions.create(
@@ -43,12 +42,11 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
         )
 
         content = response.choices[0].message.content.strip()
-        index = int(content.strip().replace(".", "")) - 1
-        if 0 <= index < len(faq_candidates):
-            return faq_candidates[index]["faq_id"]
-        else:
-            print(f"⚠️ GPT chose index {index}, which is out of range.")
-            return faq_candidates[0]["faq_id"]
+        index = int(content.strip().replace(".", ""))  
+        if not (1 <= index <= len(faq_candidates)):
+            raise ValueError(f"Index out of range: {index}")
+
+        return faq_candidates[index - 1][0].id 
     except Exception as e:
-        print(f"❌ GPT rerank failed: {e}")
-        return faq_candidates[0]["faq_id"]
+        print(f"❌ GPT rerank failed: {e} — fallback to top FAQ candidate")
+        return faq_candidates[0][0].id
