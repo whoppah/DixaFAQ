@@ -12,20 +12,25 @@ def find_top_faqs(message_embedding, top_n=5):
     similarities = []
 
     for faq in faqs:
-        sim = cosine_similarity(message_embedding, faq.embedding)
-        similarities.append((faq, sim))
+        try:
+            sim = cosine_similarity(message_embedding, faq.embedding)
+            similarities.append({"faq_id": faq.id, "similarity": sim, "faq": faq})
+        except Exception as e:
+            print(f"⚠️ Skipping FAQ ID {faq.id} due to error: {e}")
 
-    similarities.sort(key=lambda x: x[1], reverse=True)
+    similarities.sort(key=lambda x: x["similarity"], reverse=True)
     return similarities[:top_n]
 
 def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
+    """
+    faq_candidates: list of dicts with keys 'faq', 'similarity', 'faq_id'
+    Returns: faq_id (int) of best match
+    """
     client = OpenAI(api_key=openai_api_key)
 
-    prompt = (
-        f"User message:\n{message_text}\n\n"
-        f"Below are 5 FAQ entries:\n"
-    )
-    for i, (faq, _) in enumerate(faq_candidates, 1):
+    prompt = f"User message:\n{message_text}\n\nBelow are 5 FAQ entries:\n"
+    for i, entry in enumerate(faq_candidates, 1):
+        faq = entry["faq"]
         prompt += f"{i}. Q: {faq.question}\n   A: {faq.answer}\n"
 
     prompt += "\nWhich FAQ best matches the user's question? Reply with just the number (1–5)."
@@ -36,16 +41,14 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
         )
-        
+
         content = response.choices[0].message.content.strip()
-        try:
-            index = int(content.strip().replace(".", "")) - 1
-        except ValueError:
-            print(f"❌ GPT rerank failed: invalid number '{content}'")
-            return faq_candidates[0][0]
-            
-        return faq_candidates[index][0]
+        index = int(content.strip().replace(".", "")) - 1
+        if 0 <= index < len(faq_candidates):
+            return faq_candidates[index]["faq_id"]
+        else:
+            print(f"⚠️ GPT chose index {index}, which is out of range.")
+            return faq_candidates[0]["faq_id"]
     except Exception as e:
         print(f"❌ GPT rerank failed: {e}")
-        return faq_candidates[0][0]
-
+        return faq_candidates[0]["faq_id"]
