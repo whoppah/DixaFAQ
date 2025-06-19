@@ -76,6 +76,10 @@ def run_clustering_and_save():
             similarity = matched.get("similarity", 0.0)
 
             matched_faq = faq_map.get(matched_faq_question)
+            if not matched_faq:
+                logger.warning(f"⚠️ FAQ match failed for cluster {cluster_id} — question not found: {matched_faq_question}")
+                continue 
+
 
             score_data = gpt.score_resolution(top_message, matched_faq_question)
             gpt_eval = f"{score_data.get('label')} — {score_data.get('reason')}"
