@@ -66,7 +66,7 @@ class ClusterRun(models.Model):
     cluster_map = models.JSONField(null=True, blank=True)
 
     def __str__(self):
-        return f"Run {self.id} at {self.created_at.isoformat()}"
+        return f"Run {self.message_id} at {self.created_at.isoformat()}"
 
 
 class ClusterResult(models.Model):
