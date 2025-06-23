@@ -20,7 +20,6 @@ def find_top_faqs(message_embedding, top_n=5):
 
     similarities.sort(key=lambda x: x["similarity"], reverse=True)
     return similarities[:top_n]
-
 def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
     client = OpenAI(api_key=openai_api_key)
 
@@ -31,7 +30,9 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
         f"User message:\n{message_text}\n\n"
         f"FAQ options:\n"
     )
-    for i, (faq, _) in enumerate(faq_candidates, 1):
+
+    for i, item in enumerate(faq_candidates, 1):
+        faq = item["faq"]
         prompt += f"{i}. Q: {faq.question}\n   A: {faq.answer}\n"
 
     try:
@@ -46,7 +47,7 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
         if not (1 <= index <= len(faq_candidates)):
             raise ValueError(f"Index out of range: {index}")
 
-        return faq_candidates[index - 1][0].id 
+        return faq_candidates[index - 1]["faq"].id
     except Exception as e:
         print(f"❌ GPT rerank failed: {e} — fallback to top FAQ candidate")
-        return faq_candidates[0][0].id
+        return faq_candidates[0]["faq"].id
