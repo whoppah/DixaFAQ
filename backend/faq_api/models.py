@@ -16,10 +16,10 @@ class FAQ(models.Model):
 class Message(models.Model):
     message_id = models.CharField(max_length=255, primary_key=True)
     text = models.TextField()
-    author_name = models.CharField(max_length=100, null=True, blank=True)
+    author_name = models.CharField(max_length=250, null=True, blank=True)
     author_email = models.EmailField(null=True, blank=True)
-    channel = models.CharField(max_length=50, null=True, blank=True)
-    direction = models.CharField(max_length=50, null=True, blank=True)
+    channel = models.CharField(max_length=150, null=True, blank=True)
+    direction = models.CharField(max_length=150, null=True, blank=True)
 
     csid = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
@@ -46,9 +46,9 @@ class Message(models.Model):
     embedding = ArrayField(models.FloatField(), null=True, blank=True)
     #embedding_updated_at = models.DateTimeField(null=True, blank=True)
 
-    sentiment = models.CharField(max_length=20, null=True, blank=True)
+    sentiment = models.CharField(max_length=50, null=True, blank=True)
     gpt_score = models.IntegerField(null=True, blank=True)
-    gpt_label = models.CharField(max_length=50, null=True, blank=True)
+    gpt_label = models.CharField(max_length=150, null=True, blank=True)
     gpt_reason = models.TextField(null=True, blank=True)
 
     matched_faq = models.ForeignKey(
