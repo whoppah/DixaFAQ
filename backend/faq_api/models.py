@@ -68,6 +68,11 @@ class ClusterRun(models.Model):
     def __str__(self):
         return f"Run {self.id} at {self.created_at.isoformat()}"
 
+class ClusterResultMessage(models.Model):
+    cluster_result = models.ForeignKey(ClusterResult, on_delete=models.CASCADE)
+    message = models.ForeignKey(Message, to_field="message_id", on_delete=models.CASCADE)
+
+
 
 class ClusterResult(models.Model):
     run = models.ForeignKey(ClusterRun, on_delete=models.CASCADE, related_name="clusters")
@@ -89,7 +94,10 @@ class ClusterResult(models.Model):
     resolution_reason = models.TextField()
     faq_suggestion = models.JSONField(null=True, blank=True)
     topic_label = models.CharField(max_length=100)
-    messages = models.ManyToManyField("Message", related_name="cluster_results", blank=True)
+    messages = models.ManyToManyField(
+        Message, through="ClusterResultMessage", related_name="cluster_results", blank=True
+    )
+
 
     class Meta:
         unique_together = ("run", "cluster_id")
