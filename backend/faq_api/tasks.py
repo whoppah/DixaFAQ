@@ -36,11 +36,13 @@ def download_dixa_task():
     dixa_token = os.getenv("DIXA_API_TOKEN")
     if not dixa_token:
         raise Exception("Missing DIXA_API_TOKEN")
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(days=7) #Downloading 7 days of Dixa messages
 
     dixa = DixaDownloader(
         api_token=dixa_token,
-        start_date=datetime.datetime(2025, 5, 1),
-        end_date=datetime.datetime.now()
+        start_date=start_date,
+        end_date=end_date
     )
     messages, _ = dixa.download_all_dixa_data()
     inserted = 0
