@@ -68,11 +68,6 @@ class ClusterRun(models.Model):
     def __str__(self):
         return f"Run {self.id} at {self.created_at.isoformat()}"
 
-class ClusterResultMessage(models.Model):
-    cluster_result = models.ForeignKey(ClusterResult, on_delete=models.CASCADE)
-    message = models.ForeignKey(Message, to_field="message_id", on_delete=models.CASCADE)
-
-
 
 class ClusterResult(models.Model):
     run = models.ForeignKey(ClusterRun, on_delete=models.CASCADE, related_name="clusters")
@@ -104,3 +99,10 @@ class ClusterResult(models.Model):
 
     def __str__(self):
         return f"Cluster {self.cluster_id} in run {self.run_id}"
+
+
+
+class ClusterResultMessage(models.Model):
+    cluster_result = models.ForeignKey(ClusterResult, on_delete=models.CASCADE)
+    message = models.ForeignKey(Message, to_field="message_id", on_delete=models.CASCADE)
+
