@@ -21,12 +21,14 @@ class MessageClusterer:
             return {}, [], np.array([])
 
         print(f"🧪 Clustering {len(embeddings)} message embeddings...")
-        vecs = np.array([e['embedding'] for e in embeddings])
+
+        filtered = [e for e in embeddings if e.get("embedding") is not None]
+        vecs = np.array([e['embedding'] for e in filtered])
+        ids = [e['message_id'] for e in filtered]
+
 
         if vecs.size == 0 or len(vecs.shape) != 2:
             raise ValueError("Empty or invalid embeddings provided for clustering.")
-
-        ids = [e['message_id'] for e in embeddings]
 
         clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_size, metric='euclidean')
         labels = clusterer.fit_predict(vecs)
