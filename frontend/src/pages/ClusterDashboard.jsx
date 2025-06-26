@@ -36,7 +36,7 @@ export default function ClusterDashboard() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/faq/clusters");
+      const res = await axios.get("/clusters");
       setClusters(res.data?.clusters || []);
       setClusterMap(res.data?.cluster_map || []);
     } catch (err) {
@@ -48,7 +48,7 @@ export default function ClusterDashboard() {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get("/api/me/");
+      const res = await axios.get("/api/current-user-info/");;
       setUser(res.data);
     } catch (err) {
       console.warn("Not authenticated, redirecting...");
