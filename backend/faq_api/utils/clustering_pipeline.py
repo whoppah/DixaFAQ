@@ -5,6 +5,7 @@ from faq_api.models import Message, FAQ, ClusterResult, ClusterRun
 from faq_api.utils.clustering import MessageClusterer
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.sentiment import SentimentAnalyzer
+from faq_api.models import ClusterResultMessage
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -118,7 +119,12 @@ def run_clustering_and_save():
             # Attach messages
             message_ids = [msg["message_id"] for msg in items]
             linked_messages = Message.objects.filter(message_id__in=message_ids)
-            result.messages.set(linked_messages)
+            
+            for msg in linked_messages:
+                ClusterResultMessage.objects.create(
+                    cluster_result=result,
+                    message=msg
+                )
             logger.info(f"✅ Saved cluster result for cluster_id={cluster_id} ({len(items)} messages)")
         except Exception as e:
             logger.exception(f"❌ Failed processing cluster {cluster_id}: {e}")
