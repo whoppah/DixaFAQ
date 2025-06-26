@@ -38,8 +38,7 @@ class ClusterRunSerializer(serializers.ModelSerializer):
 class ClusterResultSerializer(serializers.ModelSerializer):
     matched_faq = FAQSerializer(read_only=True)
     run = ClusterRunSerializer(read_only=True)
-    # Optional: include messages in this cluster
-    messages = MessageSerializer(many=True, read_only=True, source="run.clusters")
+    messages = MessageSerializer(many=True, read_only=True) 
 
     class Meta:
         model = ClusterResult
@@ -60,5 +59,6 @@ class ClusterResultSerializer(serializers.ModelSerializer):
             "resolution_reason",
             "faq_suggestion",
             "topic_label",
-            "messages"   
+            "messages"
         ]
+
