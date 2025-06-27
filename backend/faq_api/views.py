@@ -83,7 +83,7 @@ class ClusterResultViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def current_user_info(request):
     user = request.user
     return Response({
@@ -93,7 +93,7 @@ def current_user_info(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def trigger_pipeline(request):
     if not request.user.is_staff:
         return Response({"error": "Forbidden"}, status=403)
@@ -101,7 +101,7 @@ def trigger_pipeline(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def dashboard_clusters_with_messages(request):
     topic_label = request.GET.get("topic_label")
     sentiment = request.GET.get("sentiment")
@@ -130,7 +130,7 @@ def dashboard_clusters_with_messages(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def trending_questions_leaderboard(request):
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
     today = now().date()
@@ -195,7 +195,7 @@ def trending_questions_leaderboard(request):
     return Response({"leaderboard": leaderboard})
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def faq_performance_trends(request):
     """
     Returns weekly resolution score and deflection metrics for each FAQ over time.
@@ -245,7 +245,7 @@ def faq_performance_trends(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def top_process_gaps(request):
     gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
 
@@ -292,7 +292,7 @@ Questions:
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def cluster_results(request):
     latest_run = ClusterRun.objects.order_by("-created_at").first()
     if not latest_run:
