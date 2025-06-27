@@ -119,14 +119,14 @@ def dashboard_clusters_with_messages(request):
         if cached:
             return Response({"results": cached})
 
-        # Fallback: fetch only 20 clusters + 10 messages
+        # Fallback: fetch only 20 clusters + 5 messages
         clusters = ClusterResult.objects.select_related("matched_faq", "run")[:20]
         results = []
         for cluster in clusters:
             messages = Message.objects.filter(
                 embedding__isnull=False,
                 created_at__lte=cluster.created_at
-            )[:10]
+            )[:5]
 
             results.append({
                 "cluster": ClusterResultSerializer(cluster).data,
