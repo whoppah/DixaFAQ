@@ -115,7 +115,7 @@ STATIC_URL = "static/"
 # === REST FRAMEWORK SETTINGS ===
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.permissions.AllowAny"
     ]
 }
 # === DEFAULT ===
