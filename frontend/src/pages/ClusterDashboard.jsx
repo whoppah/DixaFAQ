@@ -54,10 +54,6 @@ export default function ClusterDashboard() {
     //  navigate("/login");
     //}
   //};
-  // dev version - skip user check
-  const fetchUser = async () => {
-    setUser({ is_admin: true }); // assume admin for dev
-  };
   
 
   const [processGaps, setProcessGaps] = useState([]);
