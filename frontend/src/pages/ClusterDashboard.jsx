@@ -45,15 +45,20 @@ export default function ClusterDashboard() {
     }
   };
 
+  //const fetchUser = async () => {
+    //try {
+      //const res = await axios.get("/api/faq/current-user-info/");;
+      //setUser(res.data);
+    //} catch (err) {
+      //console.warn("Not authenticated, redirecting...");
+    //  navigate("/login");
+    //}
+  //};
+  // dev version - skip user check
   const fetchUser = async () => {
-    try {
-      const res = await axios.get("/api/faq/current-user-info/");;
-      setUser(res.data);
-    } catch (err) {
-      console.warn("Not authenticated, redirecting...");
-      navigate("/login");
-    }
+    setUser({ is_admin: true }); // assume admin for dev
   };
+  
 
   const [processGaps, setProcessGaps] = useState([]);
 
