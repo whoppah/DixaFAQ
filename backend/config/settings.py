@@ -11,8 +11,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-key")
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]  # For dev/testing; tighten in prod
-CSRF_TRUSTED_ORIGINS = ["https://frontend-dixafaq-production.up.railway.app"]  
+ALLOWED_HOSTS = ["https://backend-dixafaq-production.up.railway.app"]  
+CSRF_TRUSTED_ORIGINS = ["https://frontend-dixafaq-production.up.railway.app","https://backend-dixafaq-production.up.railway.app"]  
 
 # === API Keys ===
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -89,11 +89,13 @@ MIDDLEWARE = [
 CORS_ALLOW_CREDENTIALS = True  
 CORS_ALLOWED_ORIGINS = [
     "https://frontend-dixafaq-production.up.railway.app",
+    "https://backend-dixafaq-production.up.railway.app",
 ]
 
 # === CSRF CONFIG ===
 CSRF_TRUSTED_ORIGINS = [
     "https://frontend-dixafaq-production.up.railway.app",
+    "https://backend-dixafaq-production.up.railway.app",
 ]
 
 SESSION_COOKIE_SAMESITE = "None"
