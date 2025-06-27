@@ -19,7 +19,7 @@ from faq_api.serializers import (
     ClusterRunSerializer,
     ClusterResultSerializer,
 )
-from faq_api.tasks import async_download_and_process
+
 from faq_api.utils.gpt import GPTFAQAnalyzer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -97,8 +97,7 @@ def current_user_info(request):
 def trigger_pipeline(request):
     if not request.user.is_staff:
         return Response({"error": "Forbidden"}, status=403)
-    async_download_and_process.delay()
-    return Response({"status": "Pipeline started"})
+    return Response({"status": "Pipeline button not implemented for safety"})
 
 
 @api_view(["GET"])
