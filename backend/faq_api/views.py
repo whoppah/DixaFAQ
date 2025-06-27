@@ -13,7 +13,6 @@ from django.http import HttpResponse
 from django.utils.timezone import now
 from rest_framework import filters, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from faq_api.models import Message, FAQ, ClusterRun, ClusterResult
@@ -89,7 +88,6 @@ class ClusterResultViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def current_user_info(request):
     try:
         user = request.user
@@ -103,7 +101,6 @@ def current_user_info(request):
 
 
 @api_view(["POST"])
-@permission_classes([AllowAny])
 def trigger_pipeline(request):
     try:
         if not request.user.is_staff:
@@ -115,7 +112,6 @@ def trigger_pipeline(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def dashboard_clusters_with_messages(request):
     try:
         topic_label = request.GET.get("topic_label")
@@ -148,7 +144,6 @@ def dashboard_clusters_with_messages(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def trending_questions_leaderboard(request):
     try:
         gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
@@ -214,7 +209,6 @@ def trending_questions_leaderboard(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def faq_performance_trends(request):
     try:
         today = now().date()
@@ -262,7 +256,6 @@ def faq_performance_trends(request):
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def top_process_gaps(request):
     try:
         gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
@@ -306,7 +299,6 @@ Questions:
 
 
 @api_view(["GET"])
-@permission_classes([AllowAny])
 def cluster_results(request):
     try:
         latest_run = ClusterRun.objects.order_by("-created_at").first()
