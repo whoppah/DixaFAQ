@@ -36,9 +36,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
     "django_celery_beat",
-    # 'django.contrib.auth',         # Removed: not using login
-    # 'django.contrib.sessions',     # Removed: not using sessions
-    # 'django.contrib.messages',     # Removed: not using messaging framework
+    'django.contrib.auth',         # Removed: not using login
+    'django.contrib.sessions',     # Removed: not using sessions
+    'django.contrib.messages',     # Removed: not using messaging framework
 ]
 
 # === MIDDLEWARE ===
