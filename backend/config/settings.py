@@ -30,6 +30,22 @@ ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = '/dashboard/' 
 
+# === LOGGINGS ===
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+
 # === DATABASE ===
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
