@@ -55,6 +55,9 @@ export default function ClusterDashboard() {
     //}
   //};
   
+  const fetchUser = async () => {
+    setUser({ is_admin: true }); // to show the start pipeline button superadmin
+  };
 
   const [processGaps, setProcessGaps] = useState([]);
 
