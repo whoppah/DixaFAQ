@@ -31,12 +31,7 @@ function App() {
           </div>
         </nav>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={
-            <PrivateRoute>
-              <ClusterDashboard />
-            </PrivateRoute>
-          } />
+          <Route path="/" element={<ClusterDashboard />} />
         </Routes>
       </div>
     </Router>
