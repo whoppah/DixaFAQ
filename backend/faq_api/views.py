@@ -254,74 +254,52 @@ def faq_performance_trends(request):
         logger.error("Error in faq_performance_trends", exc_info=True)
         return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
 
-
+#change it later with real celery+db data
 @api_view(["GET"])
 def top_process_gaps(request):
     try:
-        gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
-
-        # Retrieve relevant cluster suggestions
-        clusters = ClusterResult.objects.filter(
-            coverage="Not",
-            faq_suggestion__isnull=False
-        ).select_related("matched_faq")[:100]
-
-        # Safely extract suggestion questions
-        suggestion_texts = [
-            c.faq_suggestion.get("question")
-            for c in clusters
-            if isinstance(c.faq_suggestion, dict) and c.faq_suggestion.get("question")
+        fake_data = [
+            {
+                "topic": "Account Issues",
+                "examples": [
+                    "I can't log in to my account.",
+                    "How do I reset my password?",
+                    "Login keeps failing."
+                ],
+                "count": 12
+            },
+            {
+                "topic": "Shipping Questions",
+                "examples": [
+                    "When will my order arrive?",
+                    "How do I track my delivery?",
+                    "Shipping took too long."
+                ],
+                "count": 9
+            },
+            {
+                "topic": "Returns and Refunds",
+                "examples": [
+                    "How can I return a product?",
+                    "I want a refund.",
+                    "Return policy clarification"
+                ],
+                "count": 7
+            },
+            {
+                "topic": "Payment Issues",
+                "examples": [
+                    "My card was charged twice.",
+                    "How do I update payment method?",
+                    "Payment not going through."
+                ],
+                "count": 5
+            }
         ]
 
-        # Limit and truncate input questions for token safety
-        questions = [q[:300] for q in suggestion_texts[:50]]
-
-        # Build GPT prompt
-        prompt = f"""
-You are a support documentation assistant.
-
-Given the following user questions, group them into 5–10 top-level topics and list common phrasings.
-
-Return JSON like:
-[
-  {{
-    "topic": "Account Access",
-    "examples": ["How do I reset my password?", "Can't log in", ...],
-    "count": 8
-  }},
-  ...
-]
-
-Questions:
-{json.dumps(questions)}
-"""
-
-        # Call OpenAI
-        try:
-            response = gpt.client.chat.completions.create(
-                model=gpt.model,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            content = response.choices[0].message.content.strip()
-        
-            if not content:
-                raise ValueError("Empty response from GPT")
-        
-            result = json.loads(content)
-            return Response({"process_gaps": result})
-        
-        except json.JSONDecodeError as e:
-            logger.error("Failed to decode GPT response as JSON", exc_info=True)
-            return Response({"error": "Failed to decode GPT response", "raw": content}, status=500)
-        
-        except Exception as e:
-            logger.error("GPT call failed in top_process_gaps", exc_info=True)
-            return Response({"error": str(e)}, status=500)
-
-
+        return Response({"process_gaps": fake_data})
     except Exception as e:
-        logger.error("Error in top_process_gaps", exc_info=True)
-        return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+        return Response({"error": str(e)}, status=500)
 
 
 
