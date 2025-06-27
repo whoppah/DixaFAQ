@@ -27,5 +27,10 @@ RUN python -m spacy download en_core_web_sm && \
 # Copy the rest of the code
 COPY . /app/
 
-# Default command (can be overridden in Railway settings)
-CMD ["sh", "-c", "python manage.py migrate && python manage.py createadmin && gunicorn config.wsgi:application --bind 0.0.0.0:8080"]
+# Add entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Default command
+CMD ["/app/entrypoint.sh"]
+
