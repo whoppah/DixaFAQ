@@ -119,8 +119,8 @@ def dashboard_clusters_with_messages(request):
         if cached:
             return Response({"results": cached})
 
-        # Fallback: fetch only 5 clusters + 5 messages
-        clusters = ClusterResult.objects.select_related("matched_faq", "run")[:5]
+        # Fallback: fetch only 10 clusters + 5 messages
+        clusters = ClusterResult.objects.select_related("matched_faq", "run")[:10]
         results = []
         for cluster in clusters:
             messages = Message.objects.filter(
@@ -213,19 +213,21 @@ def cluster_results(request):
     try:
         clusters = cache.get("cached_cluster_results")
         cluster_map = cache.get("cached_cluster_map")
-        if clusters and cluster_map is not None:
+
+        if clusters is not None and cluster_map is not None:
             return Response({
                 "clusters": clusters,
                 "cluster_map": cluster_map
             })
 
-        # Fallback to DB: fetch just 1 cluster
+        # Fallback to DB: fetch the first 10 clusters
         latest_run = ClusterRun.objects.order_by("-created_at").first()
         if not latest_run:
             return Response({"clusters": [], "cluster_map": []})
 
-        first_cluster = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq").first()
-        data = [ClusterResultSerializer(first_cluster).data] if first_cluster else []
+        fallback_clusters = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq")[:10]
+        data = ClusterResultSerializer(fallback_clusters, many=True).data
+
         return Response({
             "clusters": data,
             "cluster_map": latest_run.cluster_map or []
@@ -234,3 +236,4 @@ def cluster_results(request):
     except Exception as e:
         logger.error("Error in cluster_results", exc_info=True)
         return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+
