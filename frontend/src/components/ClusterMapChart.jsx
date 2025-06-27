@@ -26,7 +26,7 @@ export default function ClusterMapChart({ data, onSelectCluster }) {
         <XAxis type="number" dataKey="x" />
         <YAxis type="number" dataKey="y" />
         <Tooltip />
-        <Legend />
+        <Legend verticalAlign="top" height={36} wrapperStyle={{ display: "none" }} />
         {Object.entries(grouped).map(([label, points], index) => (
           <Scatter
             key={label}
