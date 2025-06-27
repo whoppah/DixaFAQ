@@ -87,10 +87,10 @@ MIDDLEWARE = [
 
 # === CORS CONFIG ===
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
     "https://frontend-dixafaq-production.up.railway.app",
 ]
 
+CORS_ALLOWED_CREDENTIALS = True 
 # === STATIC FILES ===
 STATIC_URL = "static/"
 
