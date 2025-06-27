@@ -1,6 +1,6 @@
 //frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../lib/axios"; 
 import { useNavigate } from "react-router-dom";
 
 import CardWrapper from "../components/CardWrapper";
@@ -21,8 +21,6 @@ import TrendingTopicsLeaderboard from "../components/TrendingTopicsLeaderboard";
 import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
 
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
