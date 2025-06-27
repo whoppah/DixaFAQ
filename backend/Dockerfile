@@ -31,6 +31,9 @@ COPY . /app/
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
+# Expose Port 
+EXPOSE 8080
+
 # Default command
 CMD ["/app/entrypoint.sh"]
 
