@@ -28,4 +28,4 @@ RUN python -m spacy download en_core_web_sm && \
 COPY . /app/
 
 # Default command (can be overridden in Railway settings)
-CMD ["sh", "-c", "python manage.py migrate && python manage.py createadmin && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]
+CMD ["sh", "-c", "set -ex && python manage.py migrate && python manage.py createadmin && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]
