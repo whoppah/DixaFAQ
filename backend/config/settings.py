@@ -139,3 +139,16 @@ REST_FRAMEWORK = {
 }
 # === DEFAULT ===
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# === CACHE ===
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": CELERY_BROKER_URL,  
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+
