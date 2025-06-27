@@ -5,8 +5,9 @@ import time
 import datetime
 import tempfile
 from celery import shared_task, chain
-from django.utils.timezone import make_aware
-from faq_api.models import Message, FAQ
+from django.utils.timezone import make_aware, now
+from django.core.cache import cache
+from faq_api.models import Message, FAQ, ClusterResult, ClusterRun
 from faq_api.utils.dixa_downloader import DixaDownloader
 from faq_api.utils.elevio_downloader import ElevioFAQDownloader
 from faq_api.utils.embedding import Tokenizer
@@ -15,6 +16,12 @@ from faq_api.utils.gpt import GPTFAQAnalyzer
 from faq_api.utils.faq_matcher import find_top_faqs, rerank_with_gpt
 from faq_api.utils.preprocess import MessagePreprocessor
 from faq_api.utils.clustering_pipeline import run_clustering_and_save
+from faq_api.serializers import ClusterResultSerializer
+from datetime import timedelta
+import collections
+import json
+import re
+
 
 def setup_google_credentials_from_env():
     raw = os.getenv("GOOGLE_CREDENTIALS_JSON")
@@ -234,6 +241,186 @@ def cluster_and_summarize_task(prev):
     }
 
 
+@shared_task
+def cache_cluster_results():
+    latest_run = ClusterRun.objects.order_by("-created_at").first()
+    if not latest_run:
+        return {"error": "No ClusterRun found"}
+
+    clusters = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq", "run")
+    data = ClusterResultSerializer(clusters, many=True).data
+    cache.set("cached_cluster_results", data, timeout=3600)
+    cache.set("cached_cluster_map", latest_run.cluster_map or [], timeout=3600)
+    return {"cached_clusters": len(data)}
+
+
+@shared_task
+def cache_dashboard_clusters_with_messages():
+    clusters = ClusterResult.objects.select_related("matched_faq", "run")[:20]
+    results = []
+
+    for cluster in clusters:
+        messages = Message.objects.filter(
+            embedding__isnull=False,
+            created_at__lte=cluster.created_at
+        )[:10]
+        results.append({
+            "cluster": ClusterResultSerializer(cluster).data,
+            "messages": [m.text for m in messages]
+        })
+
+    cache.set("cached_dashboard_clusters", results, timeout=3600)
+    return {"cached_clusters_with_messages": len(results)}
+
+
+@shared_task
+def cache_trending_questions_leaderboard():
+    gpt = GPTFAQAnalyzer(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    today = now().date()
+    start_date = today - timedelta(days=14)
+
+    messages = Message.objects.filter(created_at__date__gte=start_date, embedding__isnull=False)
+
+    messages_by_date = collections.defaultdict(list)
+    for msg in messages:
+        messages_by_date[msg.created_at.date()].append(msg)
+
+    keyword_trends = collections.defaultdict(lambda: collections.Counter())
+    sentiment_by_keyword = collections.defaultdict(lambda: collections.Counter())
+    keyword_message_map = collections.defaultdict(list)
+
+    for date, msgs in messages_by_date.items():
+        try:
+            keywords = gpt.extract_gpt_keywords(msgs)
+            for kw in keywords:
+                keyword_trends[kw][date] += 1
+                for msg in msgs:
+                    if re.search(rf"\b{re.escape(kw)}\b", msg.text, re.IGNORECASE):
+                        keyword_message_map[kw].append(msg.text)
+                        if msg.sentiment:
+                            sentiment_by_keyword[kw][msg.sentiment] += 1
+        except Exception:
+            continue
+
+    last_week = today - timedelta(days=7)
+    leaderboard = []
+
+    for kw, counts in keyword_trends.items():
+        this_week = sum(c for d, c in counts.items() if d >= last_week)
+        prev_week = sum(c for d, c in counts.items() if start_date <= d < last_week)
+        trend = [{"date": str(d), "value": counts[d]} for d in sorted(counts)]
+
+        sentiment_counts = sentiment_by_keyword[kw]
+        sentiment_score = sentiment_counts["Positive"] - sentiment_counts["Negative"]
+
+        leaderboard.append({
+            "keyword": kw,
+            "count": this_week,
+            "previous_count": prev_week,
+            "change": this_week - prev_week,
+            "trend": trend,
+            "sentiment": {
+                "positive": sentiment_counts["Positive"],
+                "neutral": sentiment_counts["Neutral"],
+                "negative": sentiment_counts["Negative"],
+                "score": sentiment_score
+            },
+            "messages": keyword_message_map[kw][:10]
+        })
+
+    leaderboard = sorted(leaderboard, key=lambda x: x["count"], reverse=True)[:20]
+    cache.set("cached_trending_leaderboard", leaderboard, timeout=3600)
+    return {"cached_keywords": len(leaderboard)}
+
+
+@shared_task
+def cache_faq_performance_trends():
+    today = now().date()
+    weeks_back = 6
+    start_date = today - timedelta(weeks=weeks_back * 7)
+
+    faqs = FAQ.objects.all()
+    faq_data = {faq.id: {"question": faq.question, "trend": []} for faq in faqs}
+
+    for i in range(weeks_back):
+        week_start = today - timedelta(days=(i + 1) * 7)
+        week_end = today - timedelta(days=i * 7)
+
+        matched = Message.objects.filter(
+            matched_faq__isnull=False,
+            created_at__date__gte=week_start,
+            created_at__date__lt=week_end
+        )
+
+        scores_by_faq = collections.defaultdict(list)
+        total_by_faq = collections.Counter()
+
+        for msg in matched:
+            if msg.matched_faq_id:
+                total_by_faq[msg.matched_faq_id] += 1
+                if msg.gpt_score:
+                    scores_by_faq[msg.matched_faq_id].append(msg.gpt_score)
+
+        for faq_id in faq_data.keys():
+            count = total_by_faq.get(faq_id, 0)
+            scores = scores_by_faq.get(faq_id, [])
+            avg_score = round(sum(scores) / len(scores), 2) if scores else None
+
+            faq_data[faq_id]["trend"].append({
+                "week": f"{week_start.isoformat()} to {week_end.isoformat()}",
+                "deflection_count": count,
+                "avg_resolution_score": avg_score
+            })
+
+    sorted_faqs = sorted(faq_data.values(), key=lambda x: sum(d["deflection_count"] for d in x["trend"]), reverse=True)
+    cache.set("cached_faq_performance", sorted_faqs, timeout=3600)
+    return {"cached_faqs": len(sorted_faqs)}
+
+
+@shared_task
+def cache_top_process_gaps():
+    gpt = GPTFAQAnalyzer(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    clusters = ClusterResult.objects.filter(
+        coverage="Not",
+        faq_suggestion__isnull=False
+    )[:100]
+
+    questions = [
+        c.faq_suggestion.get("question")
+        for c in clusters
+        if isinstance(c.faq_suggestion, dict) and c.faq_suggestion.get("question")
+    ]
+    questions = [q[:300] for q in questions[:50]]
+
+    prompt = f"""
+You are a support documentation assistant.
+
+Given the following user questions, group them into 5–10 top-level topics and list common phrasings.
+
+Return JSON like:
+[
+  {{
+    "topic": "Account Access",
+    "examples": ["How do I reset my password?", "Can't log in"],
+    "count": 8
+  }},
+  ...
+]
+
+Questions:
+{json.dumps(questions)}
+"""
+
+    response = gpt.client.chat.completions.create(
+        model=gpt.model,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    content = response.choices[0].message.content.strip()
+    result = json.loads(content)
+    cache.set("cached_top_process_gaps", result, timeout=3600)
+    return {"cached_topics": len(result)}
+    
 
 @shared_task(name="faq_api.tasks.start_pipeline")
 def start_pipeline():
@@ -244,5 +431,10 @@ def start_pipeline():
         preprocess_messages_task.s(),
         embed_messages_task.s(),
         match_messages_task.s(),
-        cluster_and_summarize_task.s()
+        cluster_and_summarize_task.s(),
+        cache_cluster_results.s(),
+        cache_dashboard_clusters_with_messages.s(),
+        cache_trending_questions_leaderboard.s(),
+        cache_faq_performance_trends.s(),
+        cache_top_process_gaps.s()
     ).apply_async()
