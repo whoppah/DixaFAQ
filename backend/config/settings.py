@@ -86,11 +86,22 @@ MIDDLEWARE = [
 ]
 
 # === CORS CONFIG ===
+CORS_ALLOW_CREDENTIALS = True  
 CORS_ALLOWED_ORIGINS = [
     "https://frontend-dixafaq-production.up.railway.app",
 ]
 
-CORS_ALLOWED_CREDENTIALS = True 
+# === CSRF CONFIG ===
+CSRF_TRUSTED_ORIGINS = [
+    "https://frontend-dixafaq-production.up.railway.app",
+]
+
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+
 # === STATIC FILES ===
 STATIC_URL = "static/"
 
