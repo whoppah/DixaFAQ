@@ -297,15 +297,27 @@ Questions:
 """
 
         # Call OpenAI
-        response = gpt.client.chat.completions.create(
-            model=gpt.model,
-            messages=[{"role": "user", "content": prompt}],
-            timeout=15  # optional, for stability
-        )
+        try:
+            response = gpt.client.chat.completions.create(
+                model=gpt.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            content = response.choices[0].message.content.strip()
+        
+            if not content:
+                raise ValueError("Empty response from GPT")
+        
+            result = json.loads(content)
+            return Response({"process_gaps": result})
+        
+        except json.JSONDecodeError as e:
+            logger.error("Failed to decode GPT response as JSON", exc_info=True)
+            return Response({"error": "Failed to decode GPT response", "raw": content}, status=500)
+        
+        except Exception as e:
+            logger.error("GPT call failed in top_process_gaps", exc_info=True)
+            return Response({"error": str(e)}, status=500)
 
-        content = response.choices[0].message.content.strip()
-        result = json.loads(content)
-        return Response({"process_gaps": result})
 
     except Exception as e:
         logger.error("Error in top_process_gaps", exc_info=True)
