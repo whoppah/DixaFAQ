@@ -23,8 +23,16 @@ export default function ClusterTable({ clusters, onReview }) {
               <Table.Cell>{cluster.cluster_id}</Table.Cell>
               <Table.Cell>{cluster.message_count}</Table.Cell>
               <Table.Cell className="max-w-xs truncate">{cluster.top_message}</Table.Cell>
-              <Table.Cell className="max-w-xs truncate">{cluster.matched_faq}</Table.Cell>
-              <Table.Cell>{(cluster.similarity * 100).toFixed(1)}%</Table.Cell>
+              <Table.Cell className="max-w-xs truncate">
+                {typeof cluster.matched_faq === "object" && cluster.matched_faq?.question
+                  ? cluster.matched_faq.question
+                  : String(cluster.matched_faq)}
+              </Table.Cell>
+              <Table.Cell>
+                {typeof cluster.similarity === "number"
+                  ? `${(cluster.similarity * 100).toFixed(1)}%`
+                  : "N/A"}
+              </Table.Cell>
               <Table.Cell>{cluster.sentiment}</Table.Cell>
               <Table.Cell className="max-w-xs truncate">{cluster.summary}</Table.Cell>
               <Table.Cell>
