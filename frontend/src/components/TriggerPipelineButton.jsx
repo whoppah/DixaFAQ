@@ -9,7 +9,7 @@ export default function TriggerPipelineButton() {
     setLoading(true);
     setStatus("");
     try {
-      const res = await fetch("/api/trigger-pipeline/", {
+      const res = await fetch("/api/faq/trigger-pipeline/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
