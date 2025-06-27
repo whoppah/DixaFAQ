@@ -1,4 +1,4 @@
-//frontend/src/App.jsx
+// frontend/src/App.jsx
 import React, { useEffect, useState } from "react";
 import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import ClusterDashboard from "./pages/ClusterDashboard";
@@ -10,6 +10,16 @@ function PrivateRoute({ children }) {
   const [checked, setChecked] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    axios.get("/api/faq/current-user-info/")
+      .then(res => setUser(res.data))
+      .catch(() => setUser(null))
+      .finally(() => setChecked(true));
+  }, []);
+
+  if (!checked) return null;
+  return user ? children : <Navigate to="/login" state={{ from: location }} />;
+}
 
 function App() {
   return (
@@ -21,7 +31,12 @@ function App() {
           </div>
         </nav>
         <Routes>
-          <Route path="/" element={<ClusterDashboard />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={
+            <PrivateRoute>
+              <ClusterDashboard />
+            </PrivateRoute>
+          } />
         </Routes>
       </div>
     </Router>
