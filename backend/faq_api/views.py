@@ -260,13 +260,23 @@ def top_process_gaps(request):
     try:
         gpt = GPTFAQAnalyzer(openai_api_key=settings.OPENAI_API_KEY)
 
+        # Retrieve relevant cluster suggestions
         clusters = ClusterResult.objects.filter(
             coverage="Not",
             faq_suggestion__isnull=False
         ).select_related("matched_faq")[:100]
 
-        suggestion_texts = [c.faq_suggestion["question"] for c in clusters if c.faq_suggestion.get("question")]
+        # Safely extract suggestion questions
+        suggestion_texts = [
+            c.faq_suggestion.get("question")
+            for c in clusters
+            if isinstance(c.faq_suggestion, dict) and c.faq_suggestion.get("question")
+        ]
 
+        # Limit and truncate input questions for token safety
+        questions = [q[:300] for q in suggestion_texts[:50]]
+
+        # Build GPT prompt
         prompt = f"""
 You are a support documentation assistant.
 
@@ -283,19 +293,24 @@ Return JSON like:
 ]
 
 Questions:
-{json.dumps(suggestion_texts[:50])}
+{json.dumps(questions)}
 """
 
-        response = gpt.client.ChatCompletion.create(
+        # Call OpenAI
+        response = gpt.client.chat.completions.create(
             model=gpt.model,
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            timeout=15  # optional, for stability
         )
-        content = response['choices'][0]['message']['content']
+
+        content = response.choices[0].message.content.strip()
         result = json.loads(content)
         return Response({"process_gaps": result})
+
     except Exception as e:
         logger.error("Error in top_process_gaps", exc_info=True)
         return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+
 
 
 @api_view(["GET"])
