@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
