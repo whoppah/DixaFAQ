@@ -1,4 +1,4 @@
-//frontend/src/components/FaAQMatchModal.jsx
+// frontend/src/components/FAQMatchModal.jsx
 import React from "react";
 import { Modal } from "flowbite-react";
 
@@ -16,7 +16,11 @@ export default function FAQMatchModal({ open, onClose, cluster }) {
           </div>
           <div>
             <strong className="text-gray-600">Matched FAQ:</strong>
-            <p>{cluster.matched_faq}</p>
+            <p>
+              {typeof cluster.matched_faq === "object" && cluster.matched_faq?.question
+                ? cluster.matched_faq.question
+                : String(cluster.matched_faq)}
+            </p>
           </div>
           <div>
             <strong className="text-gray-600">Similarity Score:</strong>
