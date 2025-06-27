@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "../lib/axios"; 
 import { useNavigate, Link } from "react-router-dom";
+import { HiOutlineInformationCircle } from "react-icons/hi";
+import { Modal, Button } from "flowbite-react";
 import CardWrapper from "../components/CardWrapper";
 import MetricCard from "../components/MetricCard";
 import ClusterTable from "../components/ClusterTable";
@@ -28,6 +30,7 @@ export default function ClusterDashboard() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -108,17 +111,53 @@ export default function ClusterDashboard() {
         c.created_at ||
         new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
     }));
+  <Modal show={showInfoModal} onClose={() => setShowInfoModal(false)} size="lg">
+    <Modal.Header>Dashboard Chart Explanations</Modal.Header>
+    <Modal.Body>
+      <div className="space-y-4 text-sm text-gray-800">
+        <div>
+          <strong>FAQ Deflection Performance</strong>
+          <p>Shows how well each FAQ reduces support load over time.</p>
+        </div>
+        <div>
+          <strong>Trending Questions</strong>
+          <p>Keywords that have surged in volume this week compared to last week.</p>
+        </div>
+        <div>
+          <strong>Resolution Score Timeline</strong>
+          <p>Tracks the average resolution score per day over recent messages.</p>
+        </div>
+        <div>
+          <strong>Sentiment Distribution</strong>
+          <p>Shows how many clusters are positive, neutral, or negative in tone.</p>
+        </div>
+        <div>
+          <strong>Cluster Map</strong>
+          <p>2D representation of clusters. Each point is a group of related messages.</p>
+        </div>
+        <div>
+          <strong>Top Process Gaps</strong>
+          <p>Topics with high volume but low FAQ coverage.</p>
+        </div>
+      </div>
+    </Modal.Body>
+    <Modal.Footer>
+      <Button onClick={() => setShowInfoModal(false)}>Close</Button>
+    </Modal.Footer>
+  </Modal>
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      <div className="flex justify-end">
-        <Link
-          to="/dashboard-help"
-          className="inline-block text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition"
+      <div className="flex justify-end mb-4">
+        <button
+          className="inline-flex items-center text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition"
+          onClick={() => setShowInfoModal(true)}
         >
-          ℹ️ Help: What do these charts mean?
-        </Link>
-        </div>
+          <HiOutlineInformationCircle className="mr-1 h-4 w-4" />
+          Help: Chart Explanations
+        </button>
+      </div>
 
       <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
 
