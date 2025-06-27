@@ -1,8 +1,7 @@
 //frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
 import axios from "../lib/axios"; 
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, Link } from "react-router-dom";
 import CardWrapper from "../components/CardWrapper";
 import MetricCard from "../components/MetricCard";
 import ClusterTable from "../components/ClusterTable";
@@ -112,6 +111,15 @@ export default function ClusterDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+      <div className="flex justify-end">
+        <Link
+          to="/dashboard-help"
+          className="inline-block text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition"
+        >
+          ℹ️ Help: What do these charts mean?
+        </Link>
+        </div>
+
       <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
 
       {user?.is_admin && (
