@@ -2,7 +2,6 @@
 import React from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import ClusterDashboard from "./pages/ClusterDashboard";
-import GraphHelpPage from "./pages/GraphHelpPage";
 
 
 
@@ -17,7 +16,6 @@ function App() {
         </nav>
         <Routes>
           <Route path="/" element={<ClusterDashboard />} />
-          <Route path="/dashboard-help" element={<GraphHelpPage />} />
         </Routes>
       </div>
     </Router>
