@@ -11,7 +11,7 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         <nav className="bg-white shadow p-4 mb-6">
           <div className="container mx-auto flex justify-between">
-            <h1 className="text-xl font-semibold text-blue-600">FAQ Analyzer (Dev)</h1>
+            <h1 className="text-xl font-semibold text-blue-600">FAQ Analyzer (no login page)</h1>
           </div>
         </nav>
         <Routes>
