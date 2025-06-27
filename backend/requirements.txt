@@ -5,6 +5,7 @@ dj-database-url
 python-dotenv
 djangorestframework
 django-cors-headers
+django-redis>=5.0.0
 openai>=1.0
 tiktoken>=0.5.1
 spacy>=3.7.2
