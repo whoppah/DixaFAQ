@@ -2,7 +2,6 @@
 import React from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import ClusterDashboard from "./pages/ClusterDashboard";
-import LoginPage from "./pages/LoginPage";
 
 function App() {
   return (
@@ -14,7 +13,6 @@ function App() {
           </div>
         </nav>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<ClusterDashboard />} />
         </Routes>
       </div>
