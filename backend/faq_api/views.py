@@ -119,8 +119,8 @@ def dashboard_clusters_with_messages(request):
         if cached:
             return Response({"results": cached})
 
-        # Fallback: fetch only 20 clusters + 5 messages
-        clusters = ClusterResult.objects.select_related("matched_faq", "run")[:20]
+        # Fallback: fetch only 30 clusters + 5 messages
+        clusters = ClusterResult.objects.select_related("matched_faq", "run")[:30]
         results = []
         for cluster in clusters:
             messages = Message.objects.filter(
@@ -220,12 +220,12 @@ def cluster_results(request):
                 "cluster_map": cluster_map
             })
 
-        # Fallback to DB: fetch the first 20 clusters
+        # Fallback to DB: fetch the first 30 clusters
         latest_run = ClusterRun.objects.order_by("-created_at").first()
         if not latest_run:
             return Response({"clusters": [], "cluster_map": []})
 
-        fallback_clusters = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq")[:20]
+        fallback_clusters = ClusterResult.objects.filter(run=latest_run).select_related("matched_faq")[:30]
         data = ClusterResultSerializer(fallback_clusters, many=True).data
 
         return Response({
