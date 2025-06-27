@@ -14,7 +14,7 @@ function PrivateRoute({ children }) {
   const location = useLocation();
 
   useEffect(() => {
-    axios.get("/api/me/")
+    axios.get("/api/current-user-info/")
       .then(res => setUser(res.data))
       .catch(() => setUser(null))
       .finally(() => setChecked(true));
