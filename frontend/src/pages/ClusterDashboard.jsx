@@ -22,6 +22,7 @@ import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
 
 
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
