@@ -29,7 +29,7 @@ export default function ClusterDashboard() {
   const [clusterMap, setClusterMap] = useState([]);
   const [selectedCluster, setSelectedCluster] = useState(null);
   const selectedClusterId = selectedCluster?.cluster_id || null;
-
+  const [timelineMessages, setTimelineMessages] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,14 +47,14 @@ export default function ClusterDashboard() {
   const [messageTimeline, setMessageTimeline] = useState([]);
   const [authorOptions, setAuthorOptions] = useState([]);
   const [selectedAuthor, setSelectedAuthor] = useState("All");
-
+  const authors = Array.from(new Set(timelineMessages.map(m => m.author_name).filter(Boolean))).sort();
   const refreshData = async () => {
     setLoading(true);
     try {
       const res = await axios.get("/api/faq/clusters/");
       const allClusters = res.data?.clusters || [];
       const mapPoints = res.data?.cluster_map || [];
-
+  
       const enrichedMap = mapPoints.map((point) => {
         const meta = allClusters.find((c) => c.cluster_id === point.label) || {};
         return {
@@ -65,14 +65,36 @@ export default function ClusterDashboard() {
           resolution_score: meta.resolution_score,
         };
       });
-
+  
       setClusters(allClusters);
       setClusterMap(enrichedMap);
+  
+      // Fetch message timeline data
+      const timelineRes = await axios.get("/api/faq/dashboard-clusters-with-messages/");
+      const allMessages = timelineRes.data?.results.flatMap(r => r.messages) || [];
+      setTimelineMessages(allMessages);
     } catch (err) {
-      console.error("Failed to load clusters:", err);
+      console.error("Failed to load clusters or timeline messages:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const aggregateSentimentCounts = (messages, selectedAuthor = null) => {
+    const counts = {};
+  
+    messages.forEach((msg) => {
+      if (selectedAuthor && msg.author_name !== selectedAuthor) return;
+      const date = msg.created_at?.slice(0, 10);
+      if (!counts[date]) {
+        counts[date] = { date, Positive: 0, Neutral: 0, Negative: 0 };
+      }
+      if (msg.sentiment === "positive") counts[date].Positive += 1;
+      if (msg.sentiment === "neutral") counts[date].Neutral += 1;
+      if (msg.sentiment === "negative") counts[date].Negative += 1;
+    });
+  
+    return Object.values(counts).sort((a, b) => a.date.localeCompare(b.date));
   };
 
   const fetchProcessGaps = async () => {
@@ -84,41 +106,10 @@ export default function ClusterDashboard() {
     }
   };
 
-  const fetchMessageTimeline = async () => {
-    try {
-      const res = await axios.get("/api/messages/?ordering=created_at");
-      const messages = res.data || [];
-
-      const timeline = {};
-      const authors = new Set();
-
-      messages.forEach((msg) => {
-        const date = msg.created_at.slice(0, 10);
-        const author = msg.author_name || "Unknown";
-        const sentiment = msg.sentiment || "neutral";
-
-        authors.add(author);
-
-        if (!timeline[date]) {
-          timeline[date] = { date, positive: 0, neutral: 0, negative: 0 };
-        }
-
-        if (sentiment === "positive") timeline[date].positive += 1;
-        else if (sentiment === "negative") timeline[date].negative += 1;
-        else timeline[date].neutral += 1;
-      });
-
-      setMessageTimeline(Object.values(timeline));
-      setAuthorOptions(["All", ...Array.from(authors)]);
-    } catch (err) {
-      console.error("Failed to fetch messages:", err);
-    }
-  };
 
   useEffect(() => {
     refreshData();
     fetchProcessGaps();
-    fetchMessageTimeline();
   }, []);
 
   const handleOpenModal = (cluster) => {
@@ -143,7 +134,7 @@ export default function ClusterDashboard() {
   };
 
   const filteredClusters = clusters.filter((c) =>
-    c.top_message.toLowerCase().includes(search.toLowerCase())
+    c.top_message?.toLowerCase().includes(search.toLowerCase())
   );
 
   const sortedClusters = [...filteredClusters].sort((a, b) => {
@@ -268,16 +259,23 @@ export default function ClusterDashboard() {
           </CardWrapper>
 
           <CardWrapper title="Message Sentiment Over Time">
-            <div className="mb-4 w-1/3">
-              <Select value={selectedAuthor} onChange={(e) => setSelectedAuthor(e.target.value)}>
-                {authorOptions.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
+            <div className="max-w-xs mb-4">
+              <Select
+                value={selectedAuthor}
+                onChange={(e) => setSelectedAuthor(e.target.value)}
+                required
+              >
+                <option value="All">All Authors</option>
+                {authors.map((a) => (
+                  <option key={a} value={a}>{a}</option>
                 ))}
               </Select>
             </div>
-            <MessageSentimentTimelineChart data={filteredTimeline} />
+
+          
+            <MessageSentimentTimelineChart
+              data={aggregateSentimentCounts(timelineMessages, selectedAuthor)}
+            />
           </CardWrapper>
 
           <div className="flex justify-between items-center mb-4">
