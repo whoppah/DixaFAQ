@@ -1,9 +1,10 @@
 //frontend/src/pages/ClusterDashboard.jsx
 import React, { useState, useEffect } from "react";
-import axios from "../lib/axios"; 
-import { useNavigate, Link } from "react-router-dom";
+import axios from "../lib/axios";
+import { useNavigate } from "react-router-dom";
 import { HiOutlineInformationCircle } from "react-icons/hi";
 import { Modal, Button } from "flowbite-react";
+
 import CardWrapper from "../components/CardWrapper";
 import MetricCard from "../components/MetricCard";
 import ClusterTable from "../components/ClusterTable";
@@ -20,19 +21,26 @@ import TriggerPipelineButton from "../components/TriggerPipelineButton";
 import FAQDeflectionTrends from "../components/FAQDeflectionTrends";
 import TrendingTopicsLeaderboard from "../components/TrendingTopicsLeaderboard";
 import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
-
-
+import ClusterMessagesModal from "../components/ClusterMessagesModal";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
   const [clusterMap, setClusterMap] = useState([]);
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState({ is_admin: true });
+  const [processGaps, setProcessGaps] = useState([]);
 
   const navigate = useNavigate();
+
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("cluster_id");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const refreshData = async () => {
     setLoading(true);
@@ -47,22 +55,6 @@ export default function ClusterDashboard() {
     }
   };
 
-  //const fetchUser = async () => {
-    //try {
-      //const res = await axios.get("/api/faq/current-user-info/");;
-      //setUser(res.data);
-    //} catch (err) {
-      //console.warn("Not authenticated, redirecting...");
-    //  navigate("/login");
-    //}
-  //};
-  
-  const fetchUser = async () => {
-    setUser({ is_admin: true }); // to show the start pipeline button superadmin
-  };
-
-  const [processGaps, setProcessGaps] = useState([]);
-
   const fetchProcessGaps = async () => {
     try {
       const res = await axios.get("/api/faq/top-process-gaps/");
@@ -71,16 +63,20 @@ export default function ClusterDashboard() {
       console.error("Failed to fetch process gaps", e);
     }
   };
-  
+
   useEffect(() => {
-    fetchUser();
     refreshData();
-    fetchProcessGaps();   
+    fetchProcessGaps();
   }, []);
 
   const handleOpenModal = (cluster) => {
     setSelectedCluster(cluster);
     setIsOpen(true);
+  };
+
+  const handleOpenMessagesModal = (cluster) => {
+    setSelectedCluster(cluster);
+    setShowMessagesModal(true);
   };
 
   const handleSelectClusterFromMap = (clusterId) => {
@@ -90,6 +86,27 @@ export default function ClusterDashboard() {
       setIsOpen(true);
     }
   };
+
+  const filteredClusters = clusters.filter((c) =>
+    c.top_message.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const sortedClusters = [...filteredClusters].sort((a, b) => {
+    const valA = a[sortBy];
+    const valB = b[sortBy];
+    if (typeof valA === "number") {
+      return sortOrder === "asc" ? valA - valB : valB - valA;
+    } else {
+      return sortOrder === "asc"
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    }
+  });
+
+  const paginatedClusters = sortedClusters.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const faqSuggestions = clusters
     .filter((c) => c.faq_suggestion && c.faq_suggestion.question)
@@ -101,7 +118,6 @@ export default function ClusterDashboard() {
       coverage: c.coverage,
       matched_faq: c.matched_faq,
       resolution_score: c.resolution_score,
-      faq_suggestion: c.faq_suggestion
     }));
 
   const getSimulatedTimeline = (clusters) =>
@@ -113,8 +129,8 @@ export default function ClusterDashboard() {
     }));
 
   return (
-     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      {/* Info button */}
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+      {/* Info Button */}
       <div className="flex justify-end mb-4">
         <button
           className="inline-flex items-center text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition"
@@ -124,6 +140,7 @@ export default function ClusterDashboard() {
           Help: Chart Explanations
         </button>
       </div>
+
       {/* Modal */}
       <Modal show={showInfoModal} onClose={() => setShowInfoModal(false)} size="lg">
         <Modal.Header>Dashboard Chart Explanations</Modal.Header>
@@ -183,44 +200,63 @@ export default function ClusterDashboard() {
         </Modal.Footer>
       </Modal>
 
-       {/*<h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>*/}
-
-      {user?.is_admin && (
-        <TriggerPipelineButton onPipelineComplete={refreshData} isAdmin={true} />
+      {selectedCluster && (
+        <ClusterMessagesModal
+          open={showMessagesModal}
+          onClose={() => setShowMessagesModal(false)}
+          cluster={selectedCluster}
+        />
       )}
+
+      {user?.is_admin && <TriggerPipelineButton onPipelineComplete={refreshData} />}
 
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
         <>
-          {/* Trending Leaderboard */}
           <TrendingTopicsLeaderboard />
-
-          {/* FAQ Deflection performance */}
           <CardWrapper title="FAQ Deflection Performance">
             <FAQDeflectionTrends />
           </CardWrapper>
 
-          {/* Top Process Gaps Panel */}
           <CardWrapper title="Top Process Gaps">
             <TopProcessGapsPanel data={processGaps} />
           </CardWrapper>
 
+          {/* Summary Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <MetricCard label="Clusters" value={clusters.length} />
+            <MetricCard
+              label="Unmatched"
+              value={clusters.filter((c) => c.coverage === "Not covered").length}
+            />
+            <MetricCard
+              label="Coverage %"
+              value={
+                ((clusters.filter((c) => c.coverage === "Fully").length / clusters.length) * 100).toFixed(1) + "%"
+              }
+            />
+            <MetricCard
+              label="Avg. Resolution Score"
+              value={
+                (
+                  clusters.reduce((sum, c) => sum + (c.resolution_score || 0), 0) / clusters.length
+                ).toFixed(2)
+              }
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CardWrapper title="Sentiment Distribution">
               <SentimentBarChart clusters={clusters} />
             </CardWrapper>
-
             <CardWrapper title="FAQ Match Quality">
               <CoveragePieChart clusters={clusters} />
             </CardWrapper>
-
             <CardWrapper title="Resolution Score Distribution">
               <ResolutionScoreBarChart clusters={clusters} />
             </CardWrapper>
-
-            <CardWrapper title="Avg. Resolution Score Over Time">
+            <CardWrapper title="Avg. Resolution Over Time">
               <ResolutionTimelineChart clusters={clusters} />
             </CardWrapper>
           </div>
@@ -229,7 +265,7 @@ export default function ClusterDashboard() {
             <TopGapsByTopicChart clusters={clusters} />
           </CardWrapper>
 
-          <CardWrapper title="FAQ Improvement Suggestions">
+          <CardWrapper title="FAQ Suggestions">
             <FAQImprovementPanel suggestions={faqSuggestions} />
           </CardWrapper>
 
@@ -237,12 +273,35 @@ export default function ClusterDashboard() {
             <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
           </CardWrapper>
 
-          <CardWrapper title="Cluster Frequency Timeline">
+          <CardWrapper title="Cluster Timeline">
             <ClusterFrequencyChart data={getSimulatedTimeline(clusters)} />
           </CardWrapper>
 
+          {/* Search and Sort Controls */}
+          <div className="flex justify-between items-center mb-4">
+            <input
+              type="text"
+              placeholder="Search top message..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border p-2 rounded w-1/3"
+            />
+          </div>
+
           <CardWrapper title="All Clusters">
-            <ClusterTable clusters={clusters} onReview={handleOpenModal} />
+            <ClusterTable
+              clusters={paginatedClusters}
+              onReview={handleOpenModal}
+              onViewMessages={handleOpenMessagesModal}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalCount={sortedClusters.length}
+              itemsPerPage={itemsPerPage}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              setSortBy={setSortBy}
+              setSortOrder={setSortOrder}
+            />
           </CardWrapper>
         </>
       )}
