@@ -10,7 +10,7 @@ import MetricCard from "../components/MetricCard";
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
-import ClusterFrequencyChart from "../components/ClusterFrequencyChart";
+import ClusterFrequencyChart from "../components/MessageSentimentTimelineChart";
 import SentimentBarChart from "../components/SentimentBarChart";
 import CoveragePieChart from "../components/CoveragePieChart";
 import ResolutionScoreBarChart from "../components/ResolutionScoreBarChart";
@@ -302,8 +302,10 @@ export default function ClusterDashboard() {
             <ClusterMapChart data={clusterMap} onSelectCluster={handleSelectClusterFromMap} />
           </CardWrapper>
 
-          <CardWrapper title="Cluster Timeline">
-            <ClusterFrequencyChart data={getSimulatedTimeline(clusters)} />
+          <CardWrapper title="Message Sentiment Over Time">
+            <MessageSentimentTimelineChart
+              data={aggregateSentimentCounts(messageTimeline)}
+            />
           </CardWrapper>
 
           {/* Search and Sort Controls */}
