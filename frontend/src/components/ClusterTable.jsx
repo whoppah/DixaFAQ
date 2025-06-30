@@ -9,6 +9,7 @@ export default function ClusterTable({clusters, onReview, onViewMessages }) {
         <Table.Head>
           <Table.HeadCell>Cluster ID</Table.HeadCell>
           <Table.HeadCell># Messages</Table.HeadCell>
+          <Table.HeadCell>Messages</Table.HeadCell> 
           <Table.HeadCell>Top Message</Table.HeadCell>
           <Table.HeadCell>Matched FAQ</Table.HeadCell>
           <Table.HeadCell>Similarity</Table.HeadCell>
