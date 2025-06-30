@@ -48,14 +48,29 @@ export default function ClusterDashboard() {
     setLoading(true);
     try {
       const res = await axios.get("/api/faq/clusters/");
-      setClusters(res.data?.clusters || []);
-      setClusterMap(res.data?.cluster_map || []);
+      const allClusters = res.data?.clusters || [];
+      const mapPoints = res.data?.cluster_map || [];
+  
+      const enrichedMap = mapPoints.map((point) => {
+        const meta = allClusters.find((c) => c.cluster_id === point.label) || {};
+        return {
+          ...point,
+          top_message: meta.top_message,
+          sentiment: meta.sentiment,
+          coverage: meta.coverage,
+          resolution_score: meta.resolution_score,
+        };
+      });
+  
+      setClusters(allClusters);
+      setClusterMap(enrichedMap);
     } catch (err) {
       console.error("Failed to load clusters:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   const fetchProcessGaps = async () => {
     try {
