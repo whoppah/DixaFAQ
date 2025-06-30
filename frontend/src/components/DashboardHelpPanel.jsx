@@ -8,14 +8,13 @@ export default function DashboardHelpPanel() {
 
   return (
     <>
-      <Button
-        size="xs"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1 border border-blue-600 text-blue-600 hover:bg-blue-50"
+      <button
+        className="inline-flex items-center text-sm text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded shadow transition"
+        onClick={() => setShowInfoModal(true)}
       >
-        <HiOutlineInformationCircle className="h-4 w-4" />
+        <HiOutlineInformationCircle className="mr-1 h-4 w-4" />
         Help
-      </Button>
+      </button>
 
       <Modal show={open} onClose={() => setOpen(false)} size="lg">
         <Modal.Header>Dashboard Chart Explanations</Modal.Header>
