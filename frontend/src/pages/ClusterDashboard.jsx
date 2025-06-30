@@ -183,8 +183,8 @@ export default function ClusterDashboard() {
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
       {/* Top Bar */}
       <div className="flex justify-between items-center mb-4">
+        <DashboardHelpPanel />
         <div className="flex justify-end gap-2 items-center mb-6">
-          <DashboardHelpPanel />
           {user?.is_admin && <TriggerPipelineButton onPipelineComplete={refreshData} />}
         </div>
       </div>
