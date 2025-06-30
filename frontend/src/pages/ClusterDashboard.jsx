@@ -33,7 +33,7 @@ export default function ClusterDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({ is_admin: true });
   const [processGaps, setProcessGaps] = useState([]);
-
+  const selectedRef = useRef(null);
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
@@ -127,6 +127,11 @@ export default function ClusterDashboard() {
         c.created_at ||
         new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
     }));
+  useEffect(() => {
+    if (selectedRef.current) {
+      selectedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [selectedClusterId]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
