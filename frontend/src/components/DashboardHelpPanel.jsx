@@ -64,6 +64,10 @@ Answer: "{faq.answer}"`}
               <strong>Sentiment Bar Chart</strong>
               <p>Aggregates the sentiment of each cluster (positive/neutral/negative).</p>
               <p>**Backend Source**: `sentiment.py` runs per message and aggregates per cluster.</p>
+              <p><strong>GPT Prompt:</strong></p>
+              <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap">
+{"You are a sentiment analysis expert. Classify the following message as one of the following: Positive, Neutral, or Negative. Message: {text}. Respond with one word only."}
+              </pre>
               <p><strong>Interpretation:</strong> Track how users are feeling about topics.</p>
             </section>
 
@@ -88,7 +92,7 @@ Then explain why.`}
             </section>
 
             <section>
-              <strong>🪄 FAQ Suggestions</strong>
+              <strong>FAQ Suggestions</strong>
               <p>Lists new questions and answers proposed by GPT where existing FAQs were weak or missing.</p>
               <p><strong>Prompt used:</strong></p>
               <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap">
@@ -127,9 +131,9 @@ Create a clearer or new FAQ if needed.`}
                 <li>Sentiment</li>
                 <li>Summary & Keywords</li>
               </ul>
-              <p><strong>GPT Usage:</strong> Summaries and keywords often generated via `gpt.py` with prompts like:</p>
+              <p><strong>GPT Usage:</strong> Summaries and keywords generated via `gpt.py` with prompts :</p>
               <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap">
-{`Summarize the theme of these messages and extract 5 key keywords.`}
+{"You are a clustering assistant. Given the following messages, label the topic in 2–4 descriptive words (e.g., 'Shipping Delay', 'Login Issue','Refund Request').Messages. Respond with just the label."}
               </pre>
               <p><strong>Interpretation:</strong> Use this for detailed audit and prioritization.</p>
             </section>
