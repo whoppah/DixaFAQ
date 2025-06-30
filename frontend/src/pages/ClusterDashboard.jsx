@@ -250,7 +250,23 @@ export default function ClusterDashboard() {
           </div>
 
           <CardWrapper title="Top FAQ Gaps by Topic">
-            <TopGapsByTopicChart clusters={clusters} />
+            <TopGapsByTopicChart
+              clusters={clusters}
+              onTopicClick={(topic) => {
+                const match = sortedClusters.find((c) => c.topic_label === topic);
+                if (!match) return;
+            
+                const index = sortedClusters.findIndex((c) => c.cluster_id === match.cluster_id);
+                const page = Math.floor(index / itemsPerPage) + 1;
+            
+                setCurrentPage(page);
+                setSelectedCluster(match);
+                setTimeout(() => {
+                  selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 100);
+              }}
+            />
+
           </CardWrapper>
 
           <CardWrapper title="FAQ Suggestions">
