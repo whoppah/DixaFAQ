@@ -27,6 +27,8 @@ export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
   const [clusterMap, setClusterMap] = useState([]);
   const [selectedCluster, setSelectedCluster] = useState(null);
+  const selectedClusterId = selectedCluster?.cluster_id || null;
+
   const [isOpen, setIsOpen] = useState(false);
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -297,6 +299,8 @@ export default function ClusterDashboard() {
           <CardWrapper title="All Clusters">
             <ClusterTable
               clusters={paginatedClusters}
+              selectedClusterId={selectedClusterId}   
+              selectedRef={selectedRef}      
               onReview={handleOpenModal}
               onViewMessages={handleOpenMessagesModal}
               currentPage={currentPage}
