@@ -145,7 +145,8 @@ export default function ClusterDashboard() {
       <Modal show={showInfoModal} onClose={() => setShowInfoModal(false)} size="lg">
         <Modal.Header>Dashboard Chart Explanations</Modal.Header>
         <Modal.Body>
-          <div className="space-y-6 text-sm text-gray-800">
+          <div className="max-h-[70vh] overflow-y-auto space-y-6 text-sm text-gray-800">
+            
             <div>
               <strong>FAQ Coverage & Deflection</strong>
               <p>Understand which FAQs successfully deflect support load and which ones need improvement.</p>
@@ -155,7 +156,7 @@ export default function ClusterDashboard() {
                 <li><em>Partially covered topics</em>: Users get incomplete help — revise the answer or split it into clearer FAQs.</li>
               </ul>
             </div>
-        
+      
             <div>
               <strong>Process Gaps</strong>
               <p>Highlights frequent questions that aren't addressed in any FAQ. These likely point to unclear processes or missing documentation.</p>
@@ -164,7 +165,7 @@ export default function ClusterDashboard() {
                 <li>Each gap includes examples of real user questions — use them to write better, targeted answers.</li>
               </ul>
             </div>
-        
+      
             <div>
               <strong>Top Questions (High Volume)</strong>
               <p>Clusters sorted by volume show the most common questions your users ask.</p>
@@ -173,7 +174,7 @@ export default function ClusterDashboard() {
                 <li>These clusters should be a priority for new or improved FAQs.</li>
               </ul>
             </div>
-        
+      
             <div>
               <strong>Weak FAQ Matches</strong>
               <p>These are cases where the chatbot gives an answer, but GPT believes it does not resolve the user's issue.</p>
@@ -182,7 +183,7 @@ export default function ClusterDashboard() {
                 <li>Suggested FAQs offer a rewrite tailored to the user's actual question.</li>
               </ul>
             </div>
-        
+      
             <div>
               <strong>FAQ Mismatch Analysis</strong>
               <p>This cross-section of coverage gaps, weak matches, and suggested questions shows what’s missing in your FAQ system.</p>
@@ -192,9 +193,9 @@ export default function ClusterDashboard() {
                 <li><em>Suggested FAQs</em>: Automatically proposed Q&As for poorly answered or uncovered topics.</li>
               </ul>
             </div>
+      
           </div>
         </Modal.Body>
-
         <Modal.Footer>
           <Button onClick={() => setShowInfoModal(false)}>Close</Button>
         </Modal.Footer>
