@@ -17,12 +17,12 @@ export default function DashboardHelpPanel() {
       </button>
 
       <Modal show={open} onClose={() => setOpen(false)} size="lg">
-        <Modal.Header>📊 Dashboard Component Guide</Modal.Header>
+        <Modal.Header>Dashboard Component Guide</Modal.Header>
         <Modal.Body>
           <div className="max-h-[70vh] overflow-y-auto space-y-6 text-sm text-gray-800">
             {/* COMPONENT-BY-COMPONENT DESCRIPTION */}
             <section>
-              <strong>📍 Cluster Map</strong>
+              <strong>Cluster Map</strong>
               <p>Visualizes each message cluster as a point in 2D space, colored by coverage status.</p>
               <p>**Backend Source**: `/api/faq/clusters/` → `cluster_map` data.</p>
               <p>Each point includes:</p>
@@ -37,7 +37,7 @@ export default function DashboardHelpPanel() {
             </section>
 
             <section>
-              <strong>📈 Message Sentiment Over Time</strong>
+              <strong>Message Sentiment Over Time</strong>
               <p>Tracks daily counts of messages classified as Positive, Neutral, or Negative.</p>
               <p>**Backend Source**: `/api/faq/dashboard-clusters-with-messages/` → timeline messages.</p>
               <p><strong>Sentiment Inference:</strong> each message is labeled using Hugging Face model (`sentiment.py`).</p>
@@ -45,7 +45,7 @@ export default function DashboardHelpPanel() {
             </section>
 
             <section>
-              <strong>🍰 Coverage Pie Chart</strong>
+              <strong>Coverage Pie Chart</strong>
               <p>Shows how many clusters are Fully, Partially, or Not covered by an FAQ.</p>
               <p>**Backend Source**: `/api/faq/clusters/` → `coverage` field for each cluster.</p>
               <p><strong>GPT Prompt:</strong></p>
@@ -61,14 +61,14 @@ Answer: "{faq.answer}"`}
             </section>
 
             <section>
-              <strong>📊 Sentiment Bar Chart</strong>
+              <strong>Sentiment Bar Chart</strong>
               <p>Aggregates the sentiment of each cluster (positive/neutral/negative).</p>
               <p>**Backend Source**: `sentiment.py` runs per message and aggregates per cluster.</p>
               <p><strong>Interpretation:</strong> Track how users are feeling about topics.</p>
             </section>
 
             <section>
-              <strong>🧠 GPT Evaluation Modal</strong>
+              <strong>GPT Evaluation Modal</strong>
               <p>Appears when reviewing a cluster. It includes GPT's evaluation of how well the FAQ addressed the top question.</p>
               <p><strong>Prompt (gpt.py):</strong></p>
               <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap">
@@ -104,21 +104,21 @@ Create a clearer or new FAQ if needed.`}
             </section>
 
             <section>
-              <strong>⏳ Resolution Score Timeline</strong>
+              <strong>Resolution Score Timeline</strong>
               <p>Line chart showing average GPT resolution score per day.</p>
               <p><strong>Backend Source:</strong> From cluster-level GPT evaluation results.</p>
               <p><strong>Interpretation:</strong> Drop in score = quality regression or new unresolved topics.</p>
             </section>
 
             <section>
-              <strong>🔥 Trending Topics</strong>
+              <strong>Trending Topics</strong>
               <p>Shows weekly change in keyword usage with sentiment trend.</p>
               <p><strong>Backend Source:</strong> `/api/faq/trending-leaderboard/` (keyword frequency + trend + sentiment).</p>
               <p><strong>Interpretation:</strong> Track new surges in user interest or problems (e.g., shipping delays, refund bugs).</p>
             </section>
 
             <section>
-              <strong>🧵 Cluster Table</strong>
+              <strong>Cluster Table</strong>
               <p>Full list of all clusters including:</p>
               <ul className="list-disc ml-5 mt-1">
                 <li>Top message</li>
@@ -135,14 +135,14 @@ Create a clearer or new FAQ if needed.`}
             </section>
 
             <section>
-              <strong>🧩 Top Process Gaps</strong>
+              <strong>Top Process Gaps</strong>
               <p>Shows which topics frequently lack any matching FAQ.</p>
               <p><strong>Backend Logic:</strong> Topics extracted where GPT said "Not covered".</p>
               <p><strong>Interpretation:</strong> Improve internal SOPs or document missing flows (e.g., payment limits, policy changes).</p>
             </section>
 
             <section>
-              <strong>📉 Top FAQ Gaps by Topic</strong>
+              <strong>Top FAQ Gaps by Topic</strong>
               <p>Bar chart showing the count of uncovered issues by topic label.</p>
               <p><strong>Interpretation:</strong> Use to prioritize thematic FAQ or training updates (e.g., "returns", "setup", "delivery").</p>
             </section>
