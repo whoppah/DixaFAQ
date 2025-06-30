@@ -80,14 +80,20 @@ export default function ClusterDashboard() {
     setSelectedCluster(cluster);
     setShowMessagesModal(true);
   };
-
+ 
   const handleSelectClusterFromMap = (clusterId) => {
     const target = clusters.find((c) => c.cluster_id === clusterId);
     if (target) {
       setSelectedCluster(target);
+  
+      // Calculate which page the cluster is on and jump to it
+      const indexInSorted = sortedClusters.findIndex(c => c.cluster_id === clusterId);
+      const page = Math.floor(indexInSorted / itemsPerPage) + 1;
+      setCurrentPage(page);
       setIsOpen(true);
     }
   };
+
 
   const filteredClusters = clusters.filter((c) =>
     c.top_message.toLowerCase().includes(search.toLowerCase())
