@@ -28,7 +28,7 @@ export default function TopGapsByTopicChart({ clusters }) {
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} layout="vertical">
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis type="number" />
+        <XAxis type="number" allowDecimals={false} />
         <YAxis dataKey="topic" type="category" width={200} />
         <Tooltip />
         <Bar dataKey="gaps" fill="#f87171" />
