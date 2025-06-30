@@ -207,7 +207,7 @@ export default function ClusterDashboard() {
           cluster={selectedCluster}
         />
       )}
-
+      <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
       {user?.is_admin && <TriggerPipelineButton onPipelineComplete={refreshData} />}
 
       {loading ? (
