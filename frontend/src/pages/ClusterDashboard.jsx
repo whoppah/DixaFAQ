@@ -1,16 +1,16 @@
 //frontend/src/pages/ClusterDashboard.jsx
-import React, { useState, useEffect, useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "../lib/axios";
 import { useNavigate } from "react-router-dom";
+import { Button, Select } from "flowbite-react";
 import { HiOutlineInformationCircle } from "react-icons/hi";
-import { Modal, Button } from "flowbite-react";
 
 import CardWrapper from "../components/CardWrapper";
 import MetricCard from "../components/MetricCard";
 import ClusterTable from "../components/ClusterTable";
 import FAQMatchModal from "../components/FAQMatchModal";
 import ClusterMapChart from "../components/ClusterMapChart";
-import ClusterFrequencyChart from "../components/MessageSentimentTimelineChart";
+import MessageSentimentTimelineChart from "../components/MessageSentimentTimelineChart";
 import SentimentBarChart from "../components/SentimentBarChart";
 import CoveragePieChart from "../components/CoveragePieChart";
 import ResolutionScoreBarChart from "../components/ResolutionScoreBarChart";
@@ -22,6 +22,7 @@ import FAQDeflectionTrends from "../components/FAQDeflectionTrends";
 import TrendingTopicsLeaderboard from "../components/TrendingTopicsLeaderboard";
 import TopProcessGapsPanel from "../components/TopProcessGapsPanel";
 import ClusterMessagesModal from "../components/ClusterMessagesModal";
+import DashboardHelpPanel from "../components/DashboardHelpPanel";
 
 export default function ClusterDashboard() {
   const [clusters, setClusters] = useState([]);
@@ -31,7 +32,6 @@ export default function ClusterDashboard() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [showMessagesModal, setShowMessagesModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState({ is_admin: true });
   const [processGaps, setProcessGaps] = useState([]);
@@ -44,13 +44,17 @@ export default function ClusterDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [messageTimeline, setMessageTimeline] = useState([]);
+  const [authorOptions, setAuthorOptions] = useState([]);
+  const [selectedAuthor, setSelectedAuthor] = useState("All");
+
   const refreshData = async () => {
     setLoading(true);
     try {
       const res = await axios.get("/api/faq/clusters/");
       const allClusters = res.data?.clusters || [];
       const mapPoints = res.data?.cluster_map || [];
-  
+
       const enrichedMap = mapPoints.map((point) => {
         const meta = allClusters.find((c) => c.cluster_id === point.label) || {};
         return {
@@ -61,7 +65,7 @@ export default function ClusterDashboard() {
           resolution_score: meta.resolution_score,
         };
       });
-  
+
       setClusters(allClusters);
       setClusterMap(enrichedMap);
     } catch (err) {
@@ -70,7 +74,6 @@ export default function ClusterDashboard() {
       setLoading(false);
     }
   };
-
 
   const fetchProcessGaps = async () => {
     try {
@@ -81,9 +84,41 @@ export default function ClusterDashboard() {
     }
   };
 
+  const fetchMessageTimeline = async () => {
+    try {
+      const res = await axios.get("/api/messages/?ordering=created_at");
+      const messages = res.data || [];
+
+      const timeline = {};
+      const authors = new Set();
+
+      messages.forEach((msg) => {
+        const date = msg.created_at.slice(0, 10);
+        const author = msg.author_name || "Unknown";
+        const sentiment = msg.sentiment || "neutral";
+
+        authors.add(author);
+
+        if (!timeline[date]) {
+          timeline[date] = { date, positive: 0, neutral: 0, negative: 0 };
+        }
+
+        if (sentiment === "positive") timeline[date].positive += 1;
+        else if (sentiment === "negative") timeline[date].negative += 1;
+        else timeline[date].neutral += 1;
+      });
+
+      setMessageTimeline(Object.values(timeline));
+      setAuthorOptions(["All", ...Array.from(authors)]);
+    } catch (err) {
+      console.error("Failed to fetch messages:", err);
+    }
+  };
+
   useEffect(() => {
     refreshData();
     fetchProcessGaps();
+    fetchMessageTimeline();
   }, []);
 
   const handleOpenModal = (cluster) => {
@@ -95,20 +130,17 @@ export default function ClusterDashboard() {
     setSelectedCluster(cluster);
     setShowMessagesModal(true);
   };
- 
+
   const handleSelectClusterFromMap = (clusterId) => {
     const target = clusters.find((c) => c.cluster_id === clusterId);
     if (target) {
       setSelectedCluster(target);
-  
-      // Calculate which page the cluster is on and jump to it
       const indexInSorted = sortedClusters.findIndex(c => c.cluster_id === clusterId);
       const page = Math.floor(indexInSorted / itemsPerPage) + 1;
       setCurrentPage(page);
       setIsOpen(true);
     }
   };
-
 
   const filteredClusters = clusters.filter((c) =>
     c.top_message.toLowerCase().includes(search.toLowerCase())
@@ -143,13 +175,10 @@ export default function ClusterDashboard() {
       resolution_score: c.resolution_score,
     }));
 
-  const getSimulatedTimeline = (clusters) =>
-    clusters.map((c, i) => ({
-      cluster_id: c.cluster_id,
-      date:
-        c.created_at ||
-        new Date(Date.now() - i * 86400000).toISOString().slice(0, 10),
-    }));
+  const filteredTimeline = selectedAuthor === "All"
+    ? messageTimeline
+    : messageTimeline.filter((msg) => msg.author === selectedAuthor);
+
   useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -158,76 +187,13 @@ export default function ClusterDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-      {/* Info Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          className="inline-flex items-center text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition"
-          onClick={() => setShowInfoModal(true)}
-        >
-          <HiOutlineInformationCircle className="mr-1 h-4 w-4" />
-          Help: Chart Explanations
-        </button>
+      {/* Top Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex gap-2 items-center">
+          <DashboardHelpPanel />
+          {user?.is_admin && <TriggerPipelineButton onPipelineComplete={refreshData} />}
+        </div>
       </div>
-
-      {/* Modal */}
-      <Modal show={showInfoModal} onClose={() => setShowInfoModal(false)} size="lg">
-        <Modal.Header>Dashboard Chart Explanations</Modal.Header>
-        <Modal.Body>
-          <div className="max-h-[70vh] overflow-y-auto space-y-6 text-sm text-gray-800">
-            
-            <div>
-              <strong>FAQ Coverage & Deflection</strong>
-              <p>Understand which FAQs successfully deflect support load and which ones need improvement.</p>
-              <ul className="list-disc ml-5 mt-2 text-gray-600">
-                <li><em>High deflection + low score</em>: Popular FAQ, but users are still confused — needs better wording or structure.</li>
-                <li><em>Low deflection + high score</em>: Accurate FAQ that isn't being surfaced enough — improve linking or chatbot intent detection.</li>
-                <li><em>Partially covered topics</em>: Users get incomplete help — revise the answer or split it into clearer FAQs.</li>
-              </ul>
-            </div>
-      
-            <div>
-              <strong>Process Gaps</strong>
-              <p>Highlights frequent questions that aren't addressed in any FAQ. These likely point to unclear processes or missing documentation.</p>
-              <ul className="list-disc ml-5 mt-2 text-gray-600">
-                <li>Use these clusters to write new internal SOPs or customer-facing help articles.</li>
-                <li>Each gap includes examples of real user questions — use them to write better, targeted answers.</li>
-              </ul>
-            </div>
-      
-            <div>
-              <strong>Top Questions (High Volume)</strong>
-              <p>Clusters sorted by volume show the most common questions your users ask.</p>
-              <ul className="list-disc ml-5 mt-2 text-gray-600">
-                <li>If no FAQ is matched or the score is low, you're missing key coverage in your help center.</li>
-                <li>These clusters should be a priority for new or improved FAQs.</li>
-              </ul>
-            </div>
-      
-            <div>
-              <strong>Weak FAQ Matches</strong>
-              <p>These are cases where the chatbot gives an answer, but GPT believes it does not resolve the user's issue.</p>
-              <ul className="list-disc ml-5 mt-2 text-gray-600">
-                <li>Look at the GPT score and justification to understand what’s missing.</li>
-                <li>Suggested FAQs offer a rewrite tailored to the user's actual question.</li>
-              </ul>
-            </div>
-      
-            <div>
-              <strong>FAQ Mismatch Analysis</strong>
-              <p>This cross-section of coverage gaps, weak matches, and suggested questions shows what’s missing in your FAQ system.</p>
-              <ul className="list-disc ml-5 mt-2 text-gray-600">
-                <li><em>Cluster Map</em>: Explore topic groupings visually — select outliers or isolated dots to find emerging or niche topics.</li>
-                <li><em>Top Gaps by Topic</em>: Reveals thematic blind spots — e.g., delivery, refunds, onboarding.</li>
-                <li><em>Suggested FAQs</em>: Automatically proposed Q&As for poorly answered or uncovered topics.</li>
-              </ul>
-            </div>
-      
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={() => setShowInfoModal(false)}>Close</Button>
-        </Modal.Footer>
-      </Modal>
 
       {selectedCluster && (
         <ClusterMessagesModal
@@ -236,14 +202,13 @@ export default function ClusterDashboard() {
           cluster={selectedCluster}
         />
       )}
-      {/*<h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>*/}
-      {user?.is_admin && <TriggerPipelineButton onPipelineComplete={refreshData} />}
 
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : (
         <>
           <TrendingTopicsLeaderboard />
+
           <CardWrapper title="FAQ Deflection Performance">
             <FAQDeflectionTrends />
           </CardWrapper>
@@ -303,12 +268,18 @@ export default function ClusterDashboard() {
           </CardWrapper>
 
           <CardWrapper title="Message Sentiment Over Time">
-            <MessageSentimentTimelineChart
-              data={aggregateSentimentCounts(messageTimeline)}
-            />
+            <div className="mb-4 w-1/3">
+              <Select value={selectedAuthor} onChange={(e) => setSelectedAuthor(e.target.value)}>
+                {authorOptions.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <MessageSentimentTimelineChart data={filteredTimeline} />
           </CardWrapper>
 
-          {/* Search and Sort Controls */}
           <div className="flex justify-between items-center mb-4">
             <input
               type="text"
@@ -322,8 +293,8 @@ export default function ClusterDashboard() {
           <CardWrapper title="All Clusters">
             <ClusterTable
               clusters={paginatedClusters}
-              selectedClusterId={selectedClusterId}   
-              selectedRef={selectedRef}      
+              selectedClusterId={selectedClusterId}
+              selectedRef={selectedRef}
               onReview={handleOpenModal}
               onViewMessages={handleOpenMessagesModal}
               currentPage={currentPage}
