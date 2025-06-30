@@ -13,7 +13,9 @@ export default function ClusterTable({
   sortBy,
   sortOrder,
   setSortBy,
-  setSortOrder
+  setSortOrder,
+  selectedClusterId,      
+  selectedRef  
 }) {
   const handleSort = (column) => {
     if (sortBy === column) {
