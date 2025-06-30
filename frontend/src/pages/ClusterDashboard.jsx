@@ -128,33 +128,56 @@ export default function ClusterDashboard() {
       <Modal show={showInfoModal} onClose={() => setShowInfoModal(false)} size="lg">
         <Modal.Header>Dashboard Chart Explanations</Modal.Header>
         <Modal.Body>
-          <div className="space-y-4 text-sm text-gray-800">
+          <div className="space-y-6 text-sm text-gray-800">
             <div>
-              <strong>FAQ Deflection Performance</strong>
-              <p>Shows how well each FAQ reduces support load over time.</p>
+              <strong>FAQ Coverage & Deflection</strong>
+              <p>Understand which FAQs successfully deflect support load and which ones need improvement.</p>
+              <ul className="list-disc ml-5 mt-2 text-gray-600">
+                <li><em>High deflection + low score</em>: Popular FAQ, but users are still confused — needs better wording or structure.</li>
+                <li><em>Low deflection + high score</em>: Accurate FAQ that isn't being surfaced enough — improve linking or chatbot intent detection.</li>
+                <li><em>Partially covered topics</em>: Users get incomplete help — revise the answer or split it into clearer FAQs.</li>
+              </ul>
             </div>
+        
             <div>
-              <strong>Trending Questions</strong>
-              <p>Keywords that have surged in volume this week compared to last week.</p>
+              <strong>Process Gaps</strong>
+              <p>Highlights frequent questions that aren't addressed in any FAQ. These likely point to unclear processes or missing documentation.</p>
+              <ul className="list-disc ml-5 mt-2 text-gray-600">
+                <li>Use these clusters to write new internal SOPs or customer-facing help articles.</li>
+                <li>Each gap includes examples of real user questions — use them to write better, targeted answers.</li>
+              </ul>
             </div>
+        
             <div>
-              <strong>Resolution Score Timeline</strong>
-              <p>Tracks the average resolution score per day over recent messages.</p>
+              <strong>Top Questions (High Volume)</strong>
+              <p>Clusters sorted by volume show the most common questions your users ask.</p>
+              <ul className="list-disc ml-5 mt-2 text-gray-600">
+                <li>If no FAQ is matched or the score is low, you're missing key coverage in your help center.</li>
+                <li>These clusters should be a priority for new or improved FAQs.</li>
+              </ul>
             </div>
+        
             <div>
-              <strong>Sentiment Distribution</strong>
-              <p>Shows how many clusters are positive, neutral, or negative in tone.</p>
+              <strong>Weak FAQ Matches</strong>
+              <p>These are cases where the chatbot gives an answer, but GPT believes it does not resolve the user's issue.</p>
+              <ul className="list-disc ml-5 mt-2 text-gray-600">
+                <li>Look at the GPT score and justification to understand what’s missing.</li>
+                <li>Suggested FAQs offer a rewrite tailored to the user's actual question.</li>
+              </ul>
             </div>
+        
             <div>
-              <strong>Cluster Map</strong>
-              <p>2D representation of clusters. Each point is a group of related messages.</p>
-            </div>
-            <div>
-              <strong>Top Process Gaps</strong>
-              <p>Topics with high volume but low FAQ coverage.</p>
+              <strong>FAQ Mismatch Analysis</strong>
+              <p>This cross-section of coverage gaps, weak matches, and suggested questions shows what’s missing in your FAQ system.</p>
+              <ul className="list-disc ml-5 mt-2 text-gray-600">
+                <li><em>Cluster Map</em>: Explore topic groupings visually — select outliers or isolated dots to find emerging or niche topics.</li>
+                <li><em>Top Gaps by Topic</em>: Reveals thematic blind spots — e.g., delivery, refunds, onboarding.</li>
+                <li><em>Suggested FAQs</em>: Automatically proposed Q&As for poorly answered or uncovered topics.</li>
+              </ul>
             </div>
           </div>
         </Modal.Body>
+
         <Modal.Footer>
           <Button onClick={() => setShowInfoModal(false)}>Close</Button>
         </Modal.Footer>
