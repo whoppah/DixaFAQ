@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload }) => {
   );
 };
 
-export default function TopGapsByTopicChart({ clusters = [] }) {
+export default function TopGapsByTopicChart({ clusters = [], onTopicClick }) {
   // Aggregate counts by topic_label
   const topicMap = {};
   clusters.forEach((c) => {
@@ -48,12 +48,20 @@ export default function TopGapsByTopicChart({ clusters = [] }) {
     .map(([topic, count]) => ({ topic, count }))
     .sort((a, b) => b.count - a.count); // sort descending
 
+  const handleClick = (data) => {
+    if (onTopicClick && data?.activePayload?.[0]?.payload) {
+      const topic = data.activePayload[0].payload.topic;
+      onTopicClick(topic);
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height={500}>
       <BarChart
         layout="vertical"
         data={chartData}
         margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
+        onClick={handleClick}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis type="number" allowDecimals={false} />
@@ -74,3 +82,4 @@ export default function TopGapsByTopicChart({ clusters = [] }) {
     </ResponsiveContainer>
   );
 }
+
