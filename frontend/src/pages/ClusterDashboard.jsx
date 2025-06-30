@@ -1,5 +1,5 @@
 //frontend/src/pages/ClusterDashboard.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef} from "react";
 import axios from "../lib/axios";
 import { useNavigate } from "react-router-dom";
 import { HiOutlineInformationCircle } from "react-icons/hi";
