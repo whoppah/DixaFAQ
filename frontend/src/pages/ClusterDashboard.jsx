@@ -129,6 +129,9 @@ export default function ClusterDashboard() {
       const indexInSorted = sortedClusters.findIndex(c => c.cluster_id === clusterId);
       const page = Math.floor(indexInSorted / itemsPerPage) + 1;
       setCurrentPage(page);
+      setTimeout(() => {
+        selectedRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100); 
       setIsOpen(true);
     }
   };
