@@ -58,7 +58,11 @@ export default function ClusterTable({
         </Table.Head>
         <Table.Body className="divide-y">
           {clusters.map((cluster) => (
-            <Table.Row key={cluster.cluster_id}>
+            <Table.Row
+              key={cluster.cluster_id}
+              ref={cluster.cluster_id === selectedClusterId ? selectedRef : null}
+              className={cluster.cluster_id === selectedClusterId ? "bg-blue-50" : ""}
+            >
               <Table.Cell>{cluster.cluster_id}</Table.Cell>
               <Table.Cell>{cluster.message_count}</Table.Cell>
               <Table.Cell>
