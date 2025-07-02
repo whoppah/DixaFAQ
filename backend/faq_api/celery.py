@@ -12,9 +12,9 @@ app.conf.enable_utc = False
 app.conf.timezone = 'Europe/Amsterdam'
 
 # Celery Beat schedule
-app.conf.beat_schedule = {
-    "weekly-download-job": {
-        "task": "faq_api.tasks.start_pipeline",
-        "schedule": crontab(minute=52, hour=14, day_of_week=4),  # Every Monday at 7:00 AM
-    },
-}
+#app.conf.beat_schedule = {
+    #"weekly-download-job": {
+        #"task": "faq_api.tasks.start_pipeline",
+        #"schedule": crontab(minute=0, hour=7, day_of_week=1),  # Every Monday at 7:00 AM
+  #  },
+#}
