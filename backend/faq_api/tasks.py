@@ -104,19 +104,26 @@ def download_elevio_task(prev):
 
     elevio_key = os.getenv("ELEVIO_API_KEY")
     elevio_jwt = os.getenv("ELEVIO_JWT")
-    openai_key = os.getenv("OPENAI_API_KEY")
-    if not elevio_key or not elevio_jwt or not openai_key:
-        raise Exception("Missing Elevio or OpenAI credentials")
+    jina_key   = os.getenv("JINA_API_KEY")
+    if not elevio_key or not elevio_jwt or not jina_key:
+        raise Exception("Missing Elevio or JINA credentials")
 
     elevio = ElevioFAQDownloader(api_key=elevio_key, jwt=elevio_jwt)
     faq_items = elevio.download_all_faqs()
-    tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
-    tokenizer.embed_and_store_faqs(faq_items)
 
+    tokenizer = Tokenizer(
+        messages_path=None,     
+        jina_api_key=jina_key,  
+        model="jina-embeddings-v4",
+        task="text-matching",
+        max_tokens=256,
+        output_path=None
+    )
+
+    tokenizer.embed_and_store_faqs(faq_items)
     duration = round(time.time() - start, 2)
     print(f"✅ Finished task: download_elevio_task in {duration}s | Count: {len(faq_items)}")
     return {**prev, "faq_count": len(faq_items)}
-
 
 @shared_task
 def preprocess_messages_task(prev):
@@ -140,34 +147,39 @@ def preprocess_messages_task(prev):
     print(f"✅ Finished task: preprocess_messages_task in {duration}s | Cleaned: {cleaned}")
     return {**prev, "preprocessed": cleaned}
 
-
 @shared_task
 def embed_messages_task(prev):
     print("🚀 Starting task: embed_messages_task")
     start = time.time()
 
-    openai_key = os.getenv("OPENAI_API_KEY")
-    tokenizer = Tokenizer(messages_path=None, openai_api_key=openai_key)
+    jina_key = os.getenv("JINA_API_KEY")
+    if not jina_key:
+        raise Exception("Missing JINA_API_KEY")
 
+    tokenizer = Tokenizer(
+        messages_path=None,     
+        jina_api_key=jina_key, 
+        model="jina-embeddings-v4",
+        task="text-matching",
+        max_tokens=256,
+        output_path=None
+    )
     count = Message.objects.filter(embedding__isnull=True).count()
     print(f"🔍 Messages to embed: {count}")
-
     embeddings = tokenizer.embed_all()
 
     duration = round(time.time() - start, 2)
     print(f"✅ Finished task: embed_messages_task in {duration}s | Count: {len(embeddings)}")
     return {**prev, "embedded_count": len(embeddings)}
 
-
-
 @shared_task
 def match_messages_task(prev, force=False):
     print("🚀 Starting task: match_messages_task")
     start = time.time()
     
-    openai_key = os.getenv("OPENAI_API_KEY")
-    gpt = GPTFAQAnalyzer(openai_api_key=openai_key)
-    sentiment_analyzer = SentimentAnalyzer(api_key=openai_key)
+    kimi_key = os.getenv("KIMI_API_KEY")
+    gpt = GPTFAQAnalyzer(kimi_api_key=kimi_key)
+    sentiment_analyzer = SentimentAnalyzer(api_key=kimi_key)
     saved = 0
     
     if force:
@@ -193,7 +205,7 @@ def match_messages_task(prev, force=False):
                 raise Exception(f"FAQ not found for id={faq_id}")
 
         except Exception as e:
-            print(f"⚠️ GPT match failed for {msg.message_id}: {e}")
+            print(f"⚠️ KIMI match failed for {msg.message_id}: {e}")
             matched_faq = None
             gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
@@ -275,7 +287,7 @@ def cache_dashboard_clusters_with_messages():
 
 @shared_task
 def cache_trending_questions_leaderboard():
-    gpt = GPTFAQAnalyzer(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    gpt = GPTFAQAnalyzer(kimi_api_key=os.getenv("KIMI_API_KEY"))
     today = now().date()
     start_date = today - timedelta(days=14)
 
@@ -379,7 +391,7 @@ def cache_faq_performance_trends():
 
 @shared_task
 def cache_top_process_gaps():
-    gpt = GPTFAQAnalyzer(openai_api_key=os.getenv("OPENAI_API_KEY"))
+    gpt = GPTFAQAnalyzer(kimi_api_key=os.getenv("KIMI_API_KEY"))
     clusters = ClusterResult.objects.filter(
         coverage="Not",
         faq_suggestion__isnull=False
