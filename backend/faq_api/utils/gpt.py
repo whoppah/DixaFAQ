@@ -3,8 +3,8 @@ import json
 from openai import OpenAI
 
 class GPTFAQAnalyzer:
-    def __init__(self, openai_api_key, model="gpt-4o"):
-        self.client = OpenAI(api_key=openai_api_key)
+    def __init__(self, kimi_api_key, model="moonshotai/kimi-k2:free"):
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=kimi_api_key)
         self.model = model
 
     def score_resolution(self, question, faq_answer):
@@ -33,7 +33,7 @@ class GPTFAQAnalyzer:
             )
             content = response.choices[0].message.content.strip()
         except Exception as e:
-            print(f"❌ GPT API call failed: {e}")
+            print(f"❌ KIMI API call failed: {e}")
             return {"label": "Unknown", "score": 0, "reason": "API error"}
     
         #Strip markdown code block formatting if present
@@ -93,7 +93,7 @@ Format:
             )
             content = response.choices[0].message.content.strip()
         except Exception as e:
-            print(f"❌ GPT API call failed during suggest_faq: {e}")
+            print(f"❌ KIMI API call failed during suggest_faq: {e}")
             return {"question": "", "answer": ""}
     
         #Strip markdown-style code blocks if present
@@ -158,5 +158,5 @@ Messages:
                 return parsed
             return []
         except Exception as e:
-            print(f"❌ GPT keyword extraction failed: {e}")
+            print(f"❌ KIMI keyword extraction failed: {e}")
             return []
