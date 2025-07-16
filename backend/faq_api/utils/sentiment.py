@@ -3,8 +3,8 @@ from openai import OpenAI
 from django.conf import settings
 
 class SentimentAnalyzer:
-    def __init__(self, model="gpt-4o", api_key=None):
-        self.client = OpenAI(api_key=api_key or settings.OPENAI_API_KEY)
+    def __init__(self, model="moonshotai/kimi-k2:free", api_key=None):
+        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key or settings.KIMI_API_KEY)
         self.model = model
 
     def analyze(self, text):
