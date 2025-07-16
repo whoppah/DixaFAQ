@@ -20,8 +20,8 @@ def find_top_faqs(message_embedding, top_n=5):
 
     similarities.sort(key=lambda x: x["similarity"], reverse=True)
     return similarities[:top_n]
-def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
-    client = OpenAI(api_key=openai_api_key)
+def rerank_with_gpt(message_text, faq_candidates, kimi_api_key):
+    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=kimi_api_key)
 
     prompt = (
         f"You are an AI assistant. Your job is to find the most relevant FAQ from the list below "
@@ -37,7 +37,7 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="moonshotai/kimi-k2:free",
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
         )
@@ -49,5 +49,5 @@ def rerank_with_gpt(message_text, faq_candidates, openai_api_key):
 
         return faq_candidates[index - 1]["faq"].id
     except Exception as e:
-        print(f"❌ GPT rerank failed: {e} — fallback to top FAQ candidate")
+        print(f"❌ KIMI rerank failed: {e} — fallback to top FAQ candidate")
         return faq_candidates[0]["faq"].id
