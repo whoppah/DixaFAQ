@@ -21,7 +21,8 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = ["https://frontend-dixafaq-production-853e.up.railway.app","https://backend-dixafaq-production.up.railway.app"]  
 
 # === API Keys ===
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+KIMI_API_KEY = os.getenv("KIMI_API_KEY","")
+JINA_API_KEY = os.getenv("JINA_API_KEY","")
 DIXA_API_TOKEN = os.getenv("DIXA_API_TOKEN", "")
 ELEVIO_API_KEY = os.getenv("ELEVIO_API_KEY", "")
 ELEVIO_JWT = os.getenv("ELEVIO_JWT", "")
