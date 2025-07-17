@@ -33,6 +33,9 @@ class Tokenizer:
             "Authorization": f"Bearer {self.jina_api_key}"
         }
 
+        # Track the first embedding length we see, to enforce uniform dims
+        self.expected_dim = None
+
     def test_embedding(self):
         """Quick smoke test against Jina endpoint."""
         payload = {
@@ -155,6 +158,15 @@ class Tokenizer:
                     continue
 
                 embedding = data[0]["embedding"]
+                # enforce consistent embedding dimension
+                if self.expected_dim is None:
+                    self.expected_dim = len(embedding)
+                    print(f"ℹ️ Expecting embedding dim = {self.expected_dim}")
+                elif len(embedding) != self.expected_dim:
+                    print(f"⚠️ Skipping message ID {msg_id}: dim {len(embedding)} ≠ {self.expected_dim}")
+                    skipped += 1
+                    continue
+
                 msg.embedding = embedding
                 msg.save(update_fields=["embedding"])
 
@@ -203,6 +215,13 @@ class Tokenizer:
                     raise Exception("No embedding returned")
 
                 embedding = data[0]["embedding"]
+                # enforce consistent embedding dimension
+                if self.expected_dim is None:
+                    self.expected_dim = len(embedding)
+                    print(f"ℹ️ Expecting embedding dim = {self.expected_dim}")
+                elif len(embedding) != self.expected_dim:
+                    raise ValueError(f"dim {len(embedding)} ≠ expected {self.expected_dim}")
+
                 faq_obj, created = FAQ.objects.update_or_create(
                     question=question,
                     defaults={"answer": answer, "embedding": embedding},
