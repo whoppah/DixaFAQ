@@ -1,10 +1,10 @@
 # backend/faq_api/utils/gpt.py
 import json
-from openai import OpenAI
+from groq import Groq
 
 class GPTFAQAnalyzer:
-    def __init__(self, kimi_api_key, model="moonshotai/kimi-k2:free"):
-        self.client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=kimi_api_key)
+    def __init__(self, groq_api_key, model="llama-3.3-70b-versatile"):
+        self.client = Groq(api_key=groq_api_key)
         self.model = model
 
     def score_resolution(self, question, faq_answer):
@@ -33,7 +33,7 @@ class GPTFAQAnalyzer:
             )
             content = response.choices[0].message.content.strip()
         except Exception as e:
-            print(f"❌ KIMI API call failed: {e}")
+            print(f"❌ GROQ API call failed: {e}")
             return {"label": "Unknown", "score": 0, "reason": "API error"}
     
         #Strip markdown code block formatting if present
@@ -47,8 +47,8 @@ class GPTFAQAnalyzer:
             if isinstance(parsed, dict) and "label" in parsed and "score" in parsed:
                 return parsed
         except Exception as e:
-            print(f"⚠️ Failed to parse GPT score response: {e}")
-            print(f"⚠️ Raw content from GPT:\n{content}")
+            print(f"⚠️ Failed to parse Groq score response: {e}")
+            print(f"⚠️ Raw content from Groq:\n{content}")
     
         return {"label": "Unknown", "score": 0, "reason": content}
 
@@ -93,7 +93,7 @@ Format:
             )
             content = response.choices[0].message.content.strip()
         except Exception as e:
-            print(f"❌ KIMI API call failed during suggest_faq: {e}")
+            print(f"❌ Groq API call failed during suggest_faq: {e}")
             return {"question": "", "answer": ""}
     
         #Strip markdown-style code blocks if present
@@ -107,7 +107,7 @@ Format:
             if isinstance(parsed, dict) and "question" in parsed and "answer" in parsed:
                 return parsed
         except Exception as e:
-            print(f"⚠️ Failed to parse GPT FAQ suggestion: {e}")
+            print(f"⚠️ Failed to parse Groq FAQ suggestion: {e}")
             print(f"⚠️ Raw content:\n{content}")
     
         return {"question": "", "answer": ""}
@@ -158,5 +158,5 @@ Messages:
                 return parsed
             return []
         except Exception as e:
-            print(f"❌ KIMI keyword extraction failed: {e}")
+            print(f"❌ Groq keyword extraction failed: {e}")
             return []
