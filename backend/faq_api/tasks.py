@@ -177,9 +177,9 @@ def match_messages_task(prev, force=False):
     print("🚀 Starting task: match_messages_task")
     start = time.time()
     
-    kimi_key = os.getenv("KIMI_API_KEY")
-    gpt = GPTFAQAnalyzer(kimi_api_key=kimi_key)
-    sentiment_analyzer = SentimentAnalyzer(api_key=kimi_key)
+    groq_key = os.getenv("GROQ_API_KEY")
+    gpt = GPTFAQAnalyzer(groq_api_key=groq_key)
+    sentiment_analyzer = SentimentAnalyzer(groq_api_key=groq_key)
     saved = 0
     
     if force:
@@ -196,7 +196,7 @@ def match_messages_task(prev, force=False):
 
         try:
             top_faqs = find_top_faqs(msg.embedding, top_n=5)
-            faq_id = rerank_with_gpt(msg.text, top_faqs, kimi_api_key=kimi_key)
+            faq_id = rerank_with_gpt(msg.text, top_faqs, groq_api_key=groq_key)
             matched_faq = FAQ.objects.filter(id=faq_id).first()
 
             if matched_faq:
@@ -205,7 +205,7 @@ def match_messages_task(prev, force=False):
                 raise Exception(f"FAQ not found for id={faq_id}")
 
         except Exception as e:
-            print(f"⚠️ KIMI match failed for {msg.message_id}: {e}")
+            print(f"⚠️ Groq match failed for {msg.message_id}: {e}")
             matched_faq = None
             gpt_eval = {"label": "unknown", "score": 0, "reason": "N/A"}
 
@@ -287,7 +287,7 @@ def cache_dashboard_clusters_with_messages():
 
 @shared_task
 def cache_trending_questions_leaderboard():
-    gpt = GPTFAQAnalyzer(kimi_api_key=os.getenv("KIMI_API_KEY"))
+    gpt = GPTFAQAnalyzer(groq_api_key=os.getenv("GROQ_API_KEY"))
     today = now().date()
     start_date = today - timedelta(days=14)
 
@@ -391,7 +391,7 @@ def cache_faq_performance_trends():
 
 @shared_task
 def cache_top_process_gaps():
-    gpt = GPTFAQAnalyzer(kimi_api_key=os.getenv("KIMI_API_KEY"))
+    gpt = GPTFAQAnalyzer(groq_api_key=os.getenv("GROQ_API_KEY"))
     clusters = ClusterResult.objects.filter(
         coverage="Not",
         faq_suggestion__isnull=False
