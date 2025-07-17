@@ -196,7 +196,7 @@ def match_messages_task(prev, force=False):
 
         try:
             top_faqs = find_top_faqs(msg.embedding, top_n=5)
-            faq_id = rerank_with_gpt(msg.text, top_faqs, openai_api_key=openai_key)
+            faq_id = rerank_with_gpt(msg.text, top_faqs, kimi_api_key=kimi_key)
             matched_faq = FAQ.objects.filter(id=faq_id).first()
 
             if matched_faq:
