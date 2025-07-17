@@ -1,14 +1,11 @@
-from openai import OpenAI
+from groq import Groq
 from django.conf import settings
 import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
 
 class SentimentAnalyzer:
-    def __init__(self, model="moonshotai/kimi-k2:free", api_key=None):
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key or settings.KIMI_API_KEY
-        )
+    def __init__(self, model="llama-3.3-70b-versatile", groq_api_key):
+        self.client = Groq(api_key=groq_api_key)
         self.model = model
 
     def analyze(self, text):
