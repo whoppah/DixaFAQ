@@ -4,7 +4,7 @@ import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
 
 class SentimentAnalyzer:
-    def __init__(self, model="llama-3.3-70b-versatile", groq_api_key):
+    def __init__(self,groq_api_key, model="llama-3.3-70b-versatile"):
         self.client = Groq(api_key=groq_api_key)
         self.model = model
 
