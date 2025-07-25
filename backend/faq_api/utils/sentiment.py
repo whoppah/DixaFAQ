@@ -8,7 +8,7 @@ from tenacity import (
 )
 
 class SentimentAnalyzer:
-    def __init__(self, groq_api_key, model="llama-3.3-70b-versatile"):
+    def __init__(self, groq_api_key, model="llama3-70b-8192"):
         self.client = Groq(api_key=groq_api_key)
         self.model = model
 
