@@ -21,7 +21,7 @@ def find_top_faqs(message_embedding, top_n=5):
     similarities.sort(key=lambda x: x["similarity"], reverse=True)
     return similarities[:top_n]
 def rerank_with_gpt(message_text, faq_candidates, groq_api_key):
-    client = Groq(api_key=grop_api_key)
+    client = Groq(api_key=groq_api_key)
 
     prompt = (
         f"You are an AI assistant. Your job is to find the most relevant FAQ from the list below "
