@@ -191,57 +191,57 @@ class Tokenizer:
         print(f"\n🎯 Embedding complete — Total: {len(embeddings)} | Skipped: {skipped}")
         return embeddings
 
-        def embed_and_store_faqs(self, faq_items):
-            print("📌 Starting FAQ embedding...")
-            if not isinstance(faq_items, list):
-                raise ValueError("Expected a list of FAQ dictionaries.")
-    
-            embedded_count = 0
-            skipped = 0
-            failed = []
-    
-            for i, faq in enumerate(faq_items, 1):
-                question = (faq.get("question") or "").strip()
-                answer   = (faq.get("answer")   or "").strip()
-                if not question or not answer:
-                    print(f"⚠️ Skipping FAQ #{i} — missing question or answer")
+    def embed_and_store_faqs(self, faq_items):
+        print("📌 Starting FAQ embedding...")
+        if not isinstance(faq_items, list):
+            raise ValueError("Expected a list of FAQ dictionaries.")
+
+        embedded_count = 0
+        skipped = 0
+        failed = []
+
+        for i, faq in enumerate(faq_items, 1):
+            question = (faq.get("question") or "").strip()
+            answer   = (faq.get("answer")   or "").strip()
+            if not question or not answer:
+                print(f"⚠️ Skipping FAQ #{i} — missing question or answer")
+                skipped += 1
+                continue
+
+            payload = {"model": self.model, "task": self.task, "input": [{"text": question}]}
+            try:
+                resp = requests.post(self.jina_url, headers=self.headers, json=payload)
+                resp.raise_for_status()
+                data = resp.json().get("data", [])
+                if not data:
+                    raise Exception("No embedding returned")
+
+                embedding = data[0]["embedding"]
+                # enforce consistent embedding dimension
+                if self.expected_dim is None:
+                    self.expected_dim = len(embedding)
+                    print(f"ℹ️ Expecting embedding dim = {self.expected_dim}")
+                elif len(embedding) != self.expected_dim:
+                    print(f"⚠️ Skipping FAQ #{i} — dim {len(embedding)} ≠ expected {self.expected_dim}")
                     skipped += 1
                     continue
-    
-                payload = {"model": self.model, "task": self.task, "input": [{"text": question}]}
-                try:
-                    resp = requests.post(self.jina_url, headers=self.headers, json=payload)
-                    resp.raise_for_status()
-                    data = resp.json().get("data", [])
-                    if not data:
-                        raise Exception("No embedding returned")
-    
-                    embedding = data[0]["embedding"]
-                    # enforce consistent embedding dimension
-                    if self.expected_dim is None:
-                        self.expected_dim = len(embedding)
-                        print(f"ℹ️ Expecting embedding dim = {self.expected_dim}")
-                    elif len(embedding) != self.expected_dim:
-                        print(f"⚠️ Skipping FAQ #{i} — dim {len(embedding)} ≠ expected {self.expected_dim}")
-                        skipped += 1
-                        continue
-    
-                    faq_obj, created = FAQ.objects.update_or_create(
-                        question=question,
-                        defaults={"answer": answer, "embedding": embedding},
-                    )
-                    action = "Created" if created else "Updated"
-                    print(f"✅ {action} FAQ #{i}: {question[:50]}")
-                    embedded_count += 1
-    
-                except Exception as e:
-                    print(f"❌ Error embedding FAQ #{i}: {question[:50]} | {e}")
-                    failed.append({"question": question, "error": str(e)})
-    
-            print(f"\n🎯 Finished embedding {embedded_count} FAQs (skipped {skipped}, failed {len(failed)})")
-            if failed:
-                print(f"❌ Failed FAQs: {len(failed)}")
-                for f in failed[:3]:
-                    print(f"  - Question: {f['question'][:50]} | Error: {f['error']}")
-            return embedded_count, failed
+
+                faq_obj, created = FAQ.objects.update_or_create(
+                    question=question,
+                    defaults={"answer": answer, "embedding": embedding},
+                )
+                action = "Created" if created else "Updated"
+                print(f"✅ {action} FAQ #{i}: {question[:50]}")
+                embedded_count += 1
+
+            except Exception as e:
+                print(f"❌ Error embedding FAQ #{i}: {question[:50]} | {e}")
+                failed.append({"question": question, "error": str(e)})
+
+        print(f"\n🎯 Finished embedding {embedded_count} FAQs (skipped {skipped}, failed {len(failed)})")
+        if failed:
+            print(f"❌ Failed FAQs: {len(failed)}")
+            for f in failed[:3]:
+                print(f"  - Question: {f['question'][:50]} | Error: {f['error']}")
+        return embedded_count, failed
 
