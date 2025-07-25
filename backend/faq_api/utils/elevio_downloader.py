@@ -8,7 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from html2text import html2text
 import re
 from datetime import datetime
-from ..models import FAQ # Import your FAQ model for the fallback
+from ..models import FAQ   
 
 
 class ElevioFAQDownloader:
@@ -189,7 +189,7 @@ class ElevioFAQDownloader:
         """
         Fetch all FAQs from Elevio, generate PDFs, and return a list of
         {"question": ..., "answer": ...}. If Elevio has none, fall back
-        to the latest FAQ in your DB.
+        to the latest 50 FAQs in your DB.
         """
         print("🚀 Starting FAQ download process...")
         print(f"📂 CWD: {os.getcwd()}")
@@ -197,13 +197,16 @@ class ElevioFAQDownloader:
 
         articles = self.get_all_articles()
 
-        # --- FALLBACK: use latest DB FAQ if no Elevio articles ---
+        # --- FALLBACK: use latest 50 DB FAQs if no Elevio articles ---
         if not articles:
-            print("❌ No Elevio articles found. Falling back to DB.")
-            latest = FAQ.objects.order_by('-id').first()
-            if latest:
-                print(f"🔄 Using DB FAQ #{latest.id}: {latest.question[:60]}")
-                return [{"question": latest.question, "answer": latest.answer}]
+            print("❌ No Elevio articles found. Falling back to DB (latest 50).")
+            latest_qs = FAQ.objects.order_by('-id')[:50]
+            if latest_qs:
+                print(f"🔄 Using {len(latest_qs)} FAQ(s) from DB.")
+                return [
+                    {"question": faq.question, "answer": faq.answer}
+                    for faq in latest_qs
+                ]
             else:
                 print("❌ No FAQs found in database either.")
                 return []
