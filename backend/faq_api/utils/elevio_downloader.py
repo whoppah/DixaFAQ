@@ -1,4 +1,4 @@
-#backend/faq_api/utils/elevio_downloader.py
+# backend/faq_api/utils/elevio_downloader.py
 import requests
 import json
 import os
@@ -8,6 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from html2text import html2text
 import re
 from datetime import datetime
+from ..models import FAQ # Import your FAQ model for the fallback
 
 
 class ElevioFAQDownloader:
@@ -23,14 +24,13 @@ class ElevioFAQDownloader:
         self.output_dir = "faq_pdfs"
 
     def setup_output_directory(self):
-        """Create output directory if it doesn't exist"""
+        """Create output directory if it doesn't exist and verify write perms."""
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
             print(f"Created directory: {self.output_dir}")
         else:
             print(f"Directory already exists: {self.output_dir}")
 
-        # Test write permissions
         test_file = os.path.join(self.output_dir, "test.txt")
         try:
             with open(test_file, "w") as f:
@@ -42,10 +42,11 @@ class ElevioFAQDownloader:
             raise
 
     def get_all_articles(self):
-        """Fetch all published articles from Elevio API"""
+        """Fetch all published articles from Elevio API, paginated."""
         articles = []
         page = 1
         page_size = 100
+
         while True:
             print(f"Fetching page {page}...")
             url = f"{self.base_url}/articles"
@@ -55,9 +56,9 @@ class ElevioFAQDownloader:
                 "status": "published",
             }
             try:
-                response = requests.get(url, headers=self.headers, params=params)
-                response.raise_for_status()
-                data = response.json()
+                resp = requests.get(url, headers=self.headers, params=params)
+                resp.raise_for_status()
+                data = resp.json()
                 page_articles = data.get("articles", [])
                 if not page_articles:
                     break
@@ -68,23 +69,24 @@ class ElevioFAQDownloader:
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching articles on page {page}: {e}")
                 break
+
         print(f"Total articles fetched: {len(articles)}")
         return articles
 
     def get_article_details(self, article_id):
-        """Fetch detailed article content including translations"""
+        """Fetch detailed article content including translations."""
         url = f"{self.base_url}/articles/{article_id}"
         try:
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            data = response.json()
+            resp = requests.get(url, headers=self.headers)
+            resp.raise_for_status()
+            data = resp.json()
             return data.get("article", {})
         except requests.exceptions.RequestException as e:
             print(f"Error fetching article {article_id}: {e}")
             return None
 
     def clean_text(self, html_content):
-        """Convert HTML to clean text"""
+        """Convert HTML to clean markdown-like text."""
         if not html_content:
             return ""
         try:
@@ -99,222 +101,158 @@ class ElevioFAQDownloader:
             return str(html_content) if html_content else ""
 
     def create_pdf(self, article):
-        """Create a PDF for a single article"""
+        """Create a PDF file for one article and return its path."""
         try:
             article_id = article.get("id", "unknown")
             print(f"  -> Creating PDF for article ID: {article_id}")
 
-            english_translation = None
-            for translation in article.get("translations", []):
-                if translation.get("language_id") == "en":
-                    english_translation = translation
-                    break
-            if not english_translation:
+            # pick the English translation
+            english = next(
+                (t for t in article.get("translations", []) if t.get("language_id") == "en"),
+                None
+            )
+            if not english:
                 print(f"  -> No English translation found for article {article_id}")
                 return None
 
-            title = english_translation.get("title") or "Untitled"
-            body = english_translation.get("body") or ""
-            summary = english_translation.get("summary") or ""
-
-            keywords_list = english_translation.get("keywords") or []
-            keywords = ", ".join(str(k) for k in keywords_list if k) if isinstance(keywords_list, list) else ""
-
+            title = english.get("title") or "Untitled"
+            body = english.get("body") or ""
+            summary = english.get("summary") or ""
+            keywords_list = english.get("keywords") or []
             tags_list = article.get("tags") or []
-            tags = ", ".join(str(t) for t in tags_list if t) if isinstance(tags_list, list) else ""
 
-            if not isinstance(title, str):
-                title = str(title) if title is not None else "Untitled"
-
+            # sanitize title for filename
             safe_title = re.sub(r"[^\w\s-]", "", title)
-            safe_title = re.sub(r"[-\s]+", "-", safe_title)
-            if not safe_title or safe_title.isspace():
-                safe_title = f"article_{article_id}"
-
+            safe_title = re.sub(r"[-\s]+", "-", safe_title).strip("-") or f"article_{article_id}"
             filename = f"{article_id}_{safe_title[:50]}.pdf"
             filepath = os.path.join(self.output_dir, filename)
-
-            print(f"  -> Creating file: {filename}")
-            print(f"  -> Full path: {os.path.abspath(filepath)}")
 
             doc = SimpleDocTemplate(filepath, pagesize=letter)
             styles = getSampleStyleSheet()
             story = []
 
-            title_style = ParagraphStyle(
-                "CustomTitle", parent=styles["Heading1"], fontSize=16, spaceAfter=20
-            )
-            heading_style = ParagraphStyle(
-                "CustomHeading", parent=styles["Heading2"], fontSize=12, spaceAfter=10, spaceBefore=15
-            )
-
-            safe_title_display = title if title.strip() else "Untitled Article"
-            story.append(Paragraph(safe_title_display, title_style))
+            # Title
+            story.append(Paragraph(title, ParagraphStyle(
+                "Title", parent=styles["Heading1"], fontSize=16, spaceAfter=20
+            )))
             story.append(Spacer(1, 12))
 
+            # Summary
             if summary.strip():
-                story.append(Paragraph("Summary", heading_style))
-                clean_summary = self.clean_text(summary)
-                if clean_summary:
-                    story.append(Paragraph(clean_summary, styles["Normal"]))
-                    story.append(Spacer(1, 12))
-
-            if keywords.strip():
-                story.append(Paragraph("Keywords", heading_style))
-                story.append(Paragraph(keywords, styles["Normal"]))
+                story.append(Paragraph("Summary", styles["Heading2"]))
+                story.append(Paragraph(self.clean_text(summary), styles["Normal"]))
                 story.append(Spacer(1, 12))
 
-            if tags.strip():
-                story.append(Paragraph("Tags", heading_style))
-                story.append(Paragraph(tags, styles["Normal"]))
+            # Keywords & Tags
+            if keywords_list:
+                story.append(Paragraph("Keywords", styles["Heading2"]))
+                story.append(Paragraph(", ".join(keywords_list), styles["Normal"]))
+                story.append(Spacer(1, 12))
+            if tags_list:
+                story.append(Paragraph("Tags", styles["Heading2"]))
+                story.append(Paragraph(", ".join(tags_list), styles["Normal"]))
                 story.append(Spacer(1, 12))
 
-            story.append(Paragraph("Content", heading_style))
-
+            # Content
+            story.append(Paragraph("Content", styles["Heading2"]))
             if body.strip():
-                clean_body = self.clean_text(body)
-                if clean_body:
-                    paragraphs = clean_body.split("\n\n")
-                    for para in paragraphs:
-                        if para.strip():
-                            try:
-                                story.append(Paragraph(para.strip(), styles["Normal"]))
-                                story.append(Spacer(1, 6))
-                            except Exception as para_error:
-                                print(f"  -> Error adding paragraph: {para_error}")
-                                story.append(Paragraph("Content formatting error", styles["Normal"]))
-                else:
-                    story.append(Paragraph("No content available", styles["Normal"]))
+                for para in self.clean_text(body).split("\n\n"):
+                    if para.strip():
+                        story.append(Paragraph(para, styles["Normal"]))
+                        story.append(Spacer(1, 6))
             else:
                 story.append(Paragraph("No content available", styles["Normal"]))
 
+            # Footer
             story.append(Spacer(1, 20))
-            footer_text = f"Article ID: {article_id} | Created: {article.get('created_at', 'N/A')} | Updated: {article.get('updated_at', 'N/A')}"
-            story.append(Paragraph(footer_text, styles["Normal"]))
+            footer = (
+                f"Article ID: {article_id} | "
+                f"Created: {article.get('created_at', 'N/A')} | "
+                f"Updated: {article.get('updated_at', 'N/A')}"
+            )
+            story.append(Paragraph(footer, styles["Normal"]))
 
-            try:
-                doc.build(story)
-                if os.path.exists(filepath):
-                    file_size = os.path.getsize(filepath)
-                    print(f"  ✅ PDF created successfully: {filename} ({file_size} bytes)")
-                    return filepath
-                else:
-                    print(f"  ❌ PDF file not found after creation: {filepath}")
-                    return None
-            except Exception as pdf_error:
-                print(f"  ❌ PDF build error: {pdf_error}")
+            doc.build(story)
+            if os.path.exists(filepath):
+                size = os.path.getsize(filepath)
+                print(f"  ✅ PDF created: {filename} ({size} bytes)")
+                return filepath
+            else:
+                print(f"  ❌ PDF not found after build: {filepath}")
                 return None
 
         except Exception as e:
-            print(f"  ❌ Error creating PDF for article {article.get('id', 'unknown')}: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"  ❌ Error creating PDF for article {article.get('id')}: {e}")
             return None
 
     def download_all_faqs(self):
-        """Main method to download all FAQs, create PDFs, and return text content for embedding."""
-        from datetime import datetime
-    
+        """
+        Fetch all FAQs from Elevio, generate PDFs, and return a list of
+        {"question": ..., "answer": ...}. If Elevio has none, fall back
+        to the latest FAQ in your DB.
+        """
         print("🚀 Starting FAQ download process...")
-        print(f"📂 Current working directory: {os.getcwd()}")
+        print(f"📂 CWD: {os.getcwd()}")
         self.setup_output_directory()
-    
+
         articles = self.get_all_articles()
+
+        # --- FALLBACK: use latest DB FAQ if no Elevio articles ---
         if not articles:
-            print("❌ No articles found!")
-            return []
-    
-        print(f"🧾 Total articles fetched: {len(articles)}")
-        for a in articles[:5]:
-            print(f"  - Article title: {a.get('title', 'N/A')}")
-    
-        created_pdfs = []
-        failed_articles = []
-        extracted_faqs = []
-    
-        for i, article in enumerate(articles, 1):
-            try:
-                article_id = article.get("id", "unknown")
-                article_title = article.get("title", "Unknown")
-                if not isinstance(article_title, str):
-                    article_title = str(article_title) if article_title is not None else "Unknown"
-                print(f"\n🔄 Processing article {i}/{len(articles)}: {article_title}")
-    
-                detailed_article = self.get_article_details(article_id)
-                if not detailed_article:
-                    failed_articles.append(article_id)
-                    print(f"  ⚠️ Failed to get details for article {article_id}")
-                    continue
-    
-                # Create PDF
-                pdf_path = self.create_pdf(detailed_article)
-                if pdf_path:
-                    created_pdfs.append(pdf_path)
-                else:
-                    failed_articles.append(article_id)
-    
-                # Extract question/answer
-                translation = next(
-                    (t for t in detailed_article.get("translations", []) if t.get("language_id") == "en"),
-                    None
-                )
-                if not translation:
-                    print(f"  ⚠️ No English translation for article {article_id}")
-                    continue
-    
-                question = translation.get("title", "").strip()
-                body_html = translation.get("body", "")
-                answer = self.clean_text(body_html)
-    
-                if not question:
-                    print(f"  ⚠️ Missing question for article {article_id}")
-                if not answer:
-                    print(f"  ⚠️ Missing answer for article {article_id}")
-    
-                if question and answer:
-                    extracted_faqs.append({
-                        "question": question,
-                        "answer": answer
-                    })
-                    print(f"  ✅ FAQ extracted: Q: {question[:50]} | A: {answer[:60]}")
-                else:
-                    print(f"  ⚠️ Skipped article {article_id} due to incomplete FAQ")
-    
-            except Exception as e:
-                article_id = article.get("id", "unknown")
-                failed_articles.append(article_id)
-                print(f"  ❌ Error processing article {article_id}: {e}")
+            print("❌ No Elevio articles found. Falling back to DB.")
+            latest = FAQ.objects.order_by('-id').first()
+            if latest:
+                print(f"🔄 Using DB FAQ #{latest.id}: {latest.question[:60]}")
+                return [{"question": latest.question, "answer": latest.answer}]
+            else:
+                print("❌ No FAQs found in database either.")
+                return []
+
+        print(f"🧾 Retrieved {len(articles)} Elevio articles.")
+        for sample in articles[:3]:
+            print(f"  • {sample.get('title', '—')}")
+
+        created_pdfs, failed, extracted = [], [], []
+
+        for idx, art in enumerate(articles, 1):
+            print(f"\n🔄 Processing {idx}/{len(articles)}: ID={art.get('id')}")
+            detail = self.get_article_details(art.get("id"))
+            if not detail:
+                failed.append(art.get("id"))
                 continue
-    
-        # Summary reporting
-        print(f"\n{'=' * 50}")
-        print("📊 SUMMARY:")
-        print(f"📝 Articles processed: {len(articles)}")
-        print(f"📄 PDFs created: {len(created_pdfs)}")
-        print(f"💬 FAQs extracted: {len(extracted_faqs)}")
-        print(f"❌ Failed articles: {len(failed_articles)}")
-        print(f"📁 Output directory: {os.path.abspath(self.output_dir)}")
-    
-        if os.path.exists(self.output_dir):
-            actual_files = [f for f in os.listdir(self.output_dir) if f.endswith(".pdf")]
-            print(f"📚 PDF files in directory: {len(actual_files)}")
-            for f in actual_files[:5]:
-                file_path = os.path.join(self.output_dir, f)
-                size = os.path.getsize(file_path)
-                print(f"  - {f} ({size} bytes)")
-    
-        if failed_articles:
-            print(f"🧨 Failed article IDs (first 10): {failed_articles[:10]}")
-    
-        # Save extracted data to JSON for offline embedding
-        summary_file = os.path.join(self.output_dir, "elevio_faq_text.json")
+
+            pdf = self.create_pdf(detail)
+            if pdf:
+                created_pdfs.append(pdf)
+            else:
+                failed.append(art.get("id"))
+
+            trans = next(
+                (t for t in detail.get("translations", []) if t.get("language_id") == "en"),
+                None
+            )
+            if not trans:
+                continue
+
+            q = (trans.get("title") or "").strip()
+            a = self.clean_text(trans.get("body", ""))
+            if q and a:
+                extracted.append({"question": q, "answer": a})
+
+        # summary
+        print("\n===== SUMMARY =====")
+        print(f"Processed: {len(articles)}")
+        print(f"PDFs: {len(created_pdfs)} | Failed: {len(failed)}")
+        print(f"Extracted FAQs: {len(extracted)}")
+        print(f"Output dir: {os.path.abspath(self.output_dir)}")
+
+        # save JSON for embedding
+        json_path = os.path.join(self.output_dir, "elevio_faq_text.json")
         try:
-            with open(summary_file, "w", encoding="utf-8") as f:
-                json.dump(extracted_faqs, f, indent=2, ensure_ascii=False)
-            print(f"✅ FAQ JSON saved: {summary_file} ({len(extracted_faqs)} entries)")
+            with open(json_path, "w", encoding="utf-8") as jf:
+                json.dump(extracted, jf, indent=2, ensure_ascii=False)
+            print(f"✅ Saved JSON: {json_path}")
         except Exception as e:
-            print(f"❌ Error writing FAQ summary JSON: {e}")
-    
-        return extracted_faqs
+            print(f"❌ Could not write JSON: {e}")
 
-
+        return extracted
