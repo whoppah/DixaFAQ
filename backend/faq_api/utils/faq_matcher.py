@@ -37,7 +37,7 @@ def rerank_with_gpt(message_text, faq_candidates, groq_api_key):
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama3-70b-8192",
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
         )
