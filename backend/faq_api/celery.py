@@ -15,6 +15,6 @@ app.conf.timezone = 'Europe/Amsterdam'
 app.conf.beat_schedule = {
     "weekly-download-job": {
         "task": "faq_api.tasks.start_pipeline",
-        "schedule": crontab(minute=59, hour=9, day_of_week=5),  # Every Monday at 7:00 AM
+        "schedule": crontab(minute=30, hour=10, day_of_week=5),  # Every Monday at 7:00 AM
     },
 }
