@@ -1,6 +1,6 @@
 # DixaFAQ
 
-The **DixaFAQ** backend service is built with Django and Django REST Framework. It provides APIs for message ingestion, FAQ management, clustering, embedding, and pipeline orchestration using Celery.
+The **DixaFAQ** backend service is built with Django and Django REST Framework. It provides APIs for message ingestion, FAQ management, clustering, embedding, and pipeline orchestration using Celery. The embedding uses JINA free API model.  
 
 ---
 
