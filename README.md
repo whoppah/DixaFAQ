@@ -17,6 +17,7 @@ The **DixaFAQ** backend service is built with Django and Django REST Framework. 
 9. [Celery & Scheduled Tasks](#celery--scheduled-tasks)
 10. [Management Commands](#management-commands)
 11. [API Endpoints](#api-endpoints)
+12. [Outlook](#outlook)
 
 ---
 
@@ -190,3 +191,7 @@ Base URL: `/api/faq/`
 | `/current-user-info/`                | GET    | Info on authenticated user             |
 
 
+---
+
+## Outlook
+As a next step it is convenient to migrate the vector embedding to Redis, using the built-in vector set architecture to store them and compute cosine similarities more efficiently. Let an AI agent interact with the visualized data and derive the new FAQs.    
