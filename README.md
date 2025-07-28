@@ -1,6 +1,6 @@
 # DixaFAQ
 
-This is the **DixaFAQ** backend readme file. The servuce is built with Django and Django REST Framework. It provides APIs for message ingestion, FAQ management, clustering, embedding, and pipeline orchestration using Celery.
+This is the **DixaFAQ** backend readme file. The service is built with Django and Django REST Framework. It provides APIs for message ingestion, FAQ management, clustering, embedding, and pipeline orchestration using Celery.
 
 ---
 
