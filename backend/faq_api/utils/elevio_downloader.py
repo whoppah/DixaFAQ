@@ -1,14 +1,15 @@
 # backend/faq_api/utils/elevio_downloader.py
-import requests
-import json
 import os
+import json
+import re
+import requests
+from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from html2text import html2text
-import re
-from datetime import datetime
-from ..models import FAQ   
+from django.conf import settings
+from ..models import FAQ
 
 
 class ElevioFAQDownloader:
@@ -189,7 +190,7 @@ class ElevioFAQDownloader:
         """
         Fetch all FAQs from Elevio, generate PDFs, and return a list of
         {"question": ..., "answer": ...}. If Elevio has none, fall back
-        to the latest 50 FAQs in your DB.
+        to the latest 50 FAQs in your DB and re-embed them with JINA.
         """
         print("🚀 Starting FAQ download process...")
         print(f"📂 CWD: {os.getcwd()}")
@@ -200,17 +201,32 @@ class ElevioFAQDownloader:
         # --- FALLBACK: use latest 50 DB FAQs if no Elevio articles ---
         if not articles:
             print("❌ No Elevio articles found. Falling back to DB (latest 50).")
-            latest_qs = FAQ.objects.order_by('-id')[:50]
-            if latest_qs:
-                print(f"🔄 Using {len(latest_qs)} FAQ(s) from DB.")
-                return [
-                    {"question": faq.question, "answer": faq.answer}
-                    for faq in latest_qs
-                ]
-            else:
+            latest_qs = list(FAQ.objects.order_by('-id')[:50])
+            if not latest_qs:
                 print("❌ No FAQs found in database either.")
                 return []
 
+            # build plain dicts for embedding
+            faq_items = [{"question": f.question, "answer": f.answer} for f in latest_qs]
+            print(f"🔄 Re-embedding {len(faq_items)} fallback FAQs with JINA model…")
+
+            from faq_api.utils.embedding import Tokenizer
+
+            tokenizer = Tokenizer(
+                messages_path=None,
+                jina_api_key=settings.JINA_API_KEY,
+                model="jina-embeddings-v4",    # or your new model
+                task="text-matching",
+                max_tokens=256,
+                output_path=None,
+            )
+            embedded_count, failures = tokenizer.embed_and_store_faqs(faq_items)
+            print(f"✅ Re-embedded {embedded_count} FAQs; {len(failures)} failures.")
+
+            # return the same list, since embed_and_store_faqs updates the DB in-place
+            return faq_items
+
+        # --- NORMAL ELEVIO FLOW ---
         print(f"🧾 Retrieved {len(articles)} Elevio articles.")
         for sample in articles[:3]:
             print(f"  • {sample.get('title', '—')}")
