@@ -200,8 +200,8 @@ class ElevioFAQDownloader:
 
         # --- FALLBACK: use latest 50 DB FAQs if no Elevio articles ---
         if not articles:
-            print("❌ No Elevio articles found. Falling back to DB (latest 50).")
-            latest_qs = list(FAQ.objects.order_by('-id')[:50])
+            print("❌ No Elevio articles found. Falling back to DB (latest 90).")
+            latest_qs = list(FAQ.objects.order_by('-id')[:90])
             if not latest_qs:
                 print("❌ No FAQs found in database either.")
                 return []
@@ -215,7 +215,7 @@ class ElevioFAQDownloader:
             tokenizer = Tokenizer(
                 messages_path=None,
                 jina_api_key=settings.JINA_API_KEY,
-                model="jina-embeddings-v4",    # or your new model
+                model="jina-embeddings-v4",   
                 task="text-matching",
                 max_tokens=256,
                 output_path=None,
